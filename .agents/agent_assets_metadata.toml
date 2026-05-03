@@ -1,8 +1,13 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "l-TQxYofnFCx2xiSmNn7u"
 uri = "file://artifacts/system-optimizer/assets/images/icon.png"
 type = "image"
 title = "optimizer-app-icon"
+
+[[outputs]]
+id = "hUgY8P5rZvpMpCrhWeEBS"
+uri = "file://exports/nabd-system-optimizer.tar.gz"
+type = "unspecified"
+title = "Nabd System Optimizer — كامل المشروع (1.2 MB)"
