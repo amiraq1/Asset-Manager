@@ -1,0 +1,70 @@
+1. أمر الإيقاف الإجباري (Force Stop)
+هذا الأمر يقوم بإنهاء التطبيق وإيقاف جميع خدماته في الخلفية تماماً، وهو نفس الإجراء الذي يحدث عندما يضغط المستخدم على "إيقاف إجباري" من إعدادات النظام.
+
+Bash
+# استبدل <package_name> باسم حزمة التطبيق
+am force-stop <package_name>
+
+# مثال لإيقاف تطبيق فيسبوك:
+am force-stop com.facebook.katana
+2. أمر مسح الذاكرة المؤقتة (Clear Cache)
+هنا يجب الحذر، لأن أمر pm clear <package_name> الافتراضي يقوم بمسح بيانات التطبيق والذاكرة المؤقتة معاً (يعيد التطبيق كأنه مُثبت حديثاً).
+لذلك، الطريقة الاحترافية التي تستخدمها تطبيقات التنظيف العميق هي الحذف المباشر لملفات الـ Cache من مسارات النظام المخفية باستخدام هذا الأمر:
+
+Bash
+# مسح محتويات مجلد الـ Cache الداخلي للتطبيق
+rm -rf /data/data/<package_name>/cache/*
+
+# مسح محتويات مجلد الـ Code Cache (الذي ينشئه النظام لتسريع التطبيق)
+rm -rf /data/data/<package_name>/code_cache/*
+
+# مسح الـ Cache الخارجي (إن وجد على الذاكرة الخارجية)
+rm -rf /sdcard/Android/data/<package_name>/cache/*
+كيف يتم تنفيذ هذه الأوامر داخل Android Studio (Kotlin)؟
+عندما تنتهي من واجهة React Native وتنتقل لكتابة الـ Native Modules، ستحتاج إلى تنفيذ هذه الأوامر.
+
+إليك دالة Kotlin نظيفة وكاملة توضح كيف يتم تمرير هذه الأوامر إلى الـ Root (يفضل لاحقاً استخدام مكتبة مثل libsu للمشاريع الاحترافية، ولكن هذا هو الأساس البرمجي):
+
+Kotlin
+import java.io.DataOutputStream
+import java.io.IOException
+
+fun executeRootCommand(command: String): Boolean {
+    var process: Process? = null
+    var os: DataOutputStream? = null
+    try {
+        // طلب صلاحية الـ Root وفتح قناة اتصال (Shell)
+        process = Runtime.getRuntime().exec("su")
+        os = DataOutputStream(process.outputStream)
+        
+        // كتابة الأمر متبوعاً بسطر جديد
+        os.writeBytes(command + "\n")
+        os.writeBytes("exit\n")
+        os.flush()
+        
+        // انتظار انتهاء تنفيذ الأمر
+        process.waitFor()
+        
+        // التحقق مما إذا كان الأمر قد تم تنفيذه بنجاح (الكود 0 يعني نجاح)
+        return process.exitValue() == 0
+        
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return false
+    } finally {
+        try {
+            os?.close()
+            process?.destroy()
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+    }
+}
+
+// ------ مثال على كيفية استخدام الدالة ------
+
+// لإيقاف تطبيق:
+// val isStopped = executeRootCommand("am force-stop com.whatsapp")
+
+// لمسح الذاكرة المؤقتة:
+// val isCleaned = executeRootCommand("rm -rf /data/data/com.whatsapp/cache/*")
