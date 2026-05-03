@@ -1,0 +1,63 @@
+بالتأكيد، هذا الدليل التقني مُصمم ليكون "خريطة الطريق" التي ستضعها بجانبك عند فتح Android Studio. هو يوضح العقد المبرم بين طبقة الجافاسكريبت وطبقة النظام، لتضمن أن كل وظيفة تستدعيها من الواجهة تجد رديفاً لها في الكود الأصلي.
+
+📄 دليل المعمارية التقنية لمشروع "نبض" (Nabd)
+هذا المشروع يعتمد على معمارية Bridge-First، حيث تم فصل منطق الواجهة تماماً عن تنفيذ العمليات الحساسة عبر الجسور البرمجية (Native Modules).
+
+🏗️ الهيكل العام للمجلدات (Architecture Overview)
+/app: تحتوي على واجهات المستخدم (Tabs, Screens) ونظام الملاحة.
+
+/services: هي "عقل" التطبيق في جانب JS؛ تقوم بتجهيز البيانات وتدقيقها قبل إرسالها للـ Bridge.
+
+/android (بعد الـ Eject): حيث ستضع ملفات الـ Kotlin لتنفيذ العمليات العميقة.
+
+🔌 العقود البرمجية للجسور (Native Modules Contract)
+يجب تنفيذ الثلاث وحدات التالية في Kotlin بنفس الأسماء تماماً لضمان عمل الواجهة تلقائياً:
+
+1. RootShell Module
+المسؤولية: تنفيذ أوامر الـ Shell بصلاحيات Root أو Shizuku.
+
+الدوال المطلوبة:
+
+isAvailable(): تُرجع Boolean (هل الجهاز مروت أو الـ Shizuku مفعّل؟).
+
+forceStopApp(packageName: String): تنفيذ am force-stop.
+
+clearAppCache(packageName: String): تنفيذ rm -rf لمجلد الـ cache.
+
+2. JunkScanner Module
+المسؤولية: الوصول لمسارات النظام المحمية.
+
+الدوال المطلوبة:
+
+getDeepSystemJunk(): مسح مجلدات Android/data و obb و LOST.DIR.
+
+deleteFiles(paths: Array): حذف قائمة المسارات المُرسلة دفعة واحدة.
+
+3. DeviceStats Module
+المسؤولية: جلب بيانات الاستخدام الحقيقية من الـ Kernel.
+
+الدوال المطلوبة:
+
+getRamUsage(): قراءة ملف /proc/meminfo لجلب الـ RAM الحقيقي.
+
+getInstalledApps(): استخدام PackageManager لجلب قائمة التطبيقات مع أحجامها وأيقوناتها.
+
+🛠️ تدفق البيانات (Data Flow)
+تتبع العمليات الحساسة (مثل تنظيف الملفات) المسار التالي لضمان الأمان:
+
+الواجهة (UI): يضغط المستخدم على "تنظيف".
+
+الخدمة (JunkScanner.ts): تتحقق من الصلاحيات وتفصل الملفات (آمنة / مقيدة).
+
+الجسر (RootShell): يستلم الملفات المقيدة ويرسلها لـ Kotlin.
+
+النظام (Kotlin): يطلب صلاحية الـ Root، ينفذ rm -rf ويُرجع النتيجة (نجاح/فشل).
+
+التنبيه (ToastProvider): يظهر للمستخدم حجم البيانات التي تم تحريرها فعلياً.
+
+⚠️ ملاحظات التنفيذ في Android Studio
+الصلاحيات: تأكد من إضافة REQUEST_IGNORE_BATTERY_OPTIMIZATIONS و PACKAGE_USAGE_STATS في الـ AndroidManifest.xml.
+
+Thread Management: في Kotlin، تأكد من تنفيذ عمليات الـ Shell في Dispatchers.IO لكي لا تتسبب في تجمد واجهة التطبيق (ANR).
+
+تنسيق البيانات: عند إرسال قائمة التطبيقات، استخدم WritableNativeArray و WritableNativeMap لتتوافق مع بروتوكول React Native.
