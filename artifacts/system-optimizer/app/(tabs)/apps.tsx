@@ -22,6 +22,9 @@ import { runShortcut, SYSTEM_SHORTCUTS } from "@/services/AppManagerService";
 import {
   clearAppCache,
   forceStopApp,
+  suspendApp,
+  unsuspendApp,
+  enableApp,
   isValidPackageName,
   NativeModuleUnavailableError,
 } from "@/services/RootShell";
@@ -30,7 +33,7 @@ import { useSettingsStore } from "@/store/settingsStore";
 const WEB_TOP_INSET = 67;
 const TAB_BAR_HEIGHT = 84;
 
-type RootAction = "forceStop" | "clearCache";
+type RootAction = "forceStop" | "clearCache" | "suspendApp" | "unsuspendApp" | "enableApp";
 
 export default function AppsScreen() {
   const colors = useColors();
@@ -56,7 +59,16 @@ export default function AppsScreen() {
     }
     setPending(action);
     try {
-      const fn = action === "forceStop" ? forceStopApp : clearAppCache;
+      const fn =
+        action === "forceStop"
+          ? forceStopApp
+          : action === "clearCache"
+            ? clearAppCache
+            : action === "suspendApp"
+              ? suspendApp
+              : action === "unsuspendApp"
+                ? unsuspendApp
+                : enableApp;
       const ok = await fn(pkgTrim);
       toast.show(
         t(ok ? "rootShell.success" : "rootShell.failed", { pkg: pkgTrim }),
@@ -134,28 +146,69 @@ export default function AppsScreen() {
             },
           ]}
         />
-        <View style={styles.actionsRow}>
-          <View style={styles.actionItem}>
-            <Button
-              label={t("rootShell.forceStop")}
-              icon="stop-circle"
-              variant="danger"
-              fullWidth
-              loading={pending === "forceStop"}
-              disabled={pending !== null}
-              onPress={() => void runRootAction("forceStop")}
-            />
+        <View style={styles.actionsCol}>
+          <View style={styles.actionsRow}>
+            <View style={styles.actionItem}>
+              <Button
+                label={t("rootShell.forceStop")}
+                icon="stop-circle"
+                variant="danger"
+                fullWidth
+                loading={pending === "forceStop"}
+                disabled={pending !== null}
+                onPress={() => void runRootAction("forceStop")}
+              />
+            </View>
+            <View style={styles.actionItem}>
+              <Button
+                label={t("rootShell.clearCache")}
+                icon="trash-2"
+                variant="secondary"
+                fullWidth
+                loading={pending === "clearCache"}
+                disabled={pending !== null}
+                onPress={() => void runRootAction("clearCache")}
+              />
+            </View>
           </View>
-          <View style={styles.actionItem}>
-            <Button
-              label={t("rootShell.clearCache")}
-              icon="trash-2"
-              variant="secondary"
-              fullWidth
-              loading={pending === "clearCache"}
-              disabled={pending !== null}
-              onPress={() => void runRootAction("clearCache")}
-            />
+
+          <View style={styles.actionsRow}>
+            <View style={styles.actionItem}>
+              <Button
+                label={t("rootShell.suspend")}
+                icon="pause-circle"
+                variant="secondary"
+                fullWidth
+                loading={pending === "suspendApp"}
+                disabled={pending !== null}
+                onPress={() => void runRootAction("suspendApp")}
+              />
+            </View>
+            <View style={styles.actionItem}>
+              <Button
+                label={t("rootShell.unsuspend")}
+                icon="play-circle"
+                variant="secondary"
+                fullWidth
+                loading={pending === "unsuspendApp"}
+                disabled={pending !== null}
+                onPress={() => void runRootAction("unsuspendApp")}
+              />
+            </View>
+          </View>
+
+          <View style={styles.actionsRow}>
+            <View style={styles.actionItem}>
+              <Button
+                label={t("rootShell.enable")}
+                icon="check-circle"
+                variant="secondary"
+                fullWidth
+                loading={pending === "enableApp"}
+                disabled={pending !== null}
+                onPress={() => void runRootAction("enableApp")}
+              />
+            </View>
           </View>
         </View>
       </Card>

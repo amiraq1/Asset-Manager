@@ -27,12 +27,27 @@ const log = createLogger("RootShell");
  *       )
  *       p.resolve(ok)
  *     }
+ *     @ReactMethod fun suspendApp(pkg: String, p: Promise) {
+ *       val ok = executeRootCommand("pm suspend $pkg")
+ *       p.resolve(ok)
+ *     }
+ *     @ReactMethod fun unsuspendApp(pkg: String, p: Promise) {
+ *       val ok = executeRootCommand("pm unsuspend $pkg")
+ *       p.resolve(ok)
+ *     }
+ *     @ReactMethod fun enableApp(pkg: String, p: Promise) {
+ *       val ok = executeRootCommand("pm enable $pkg")
+ *       p.resolve(ok)
+ *     }
  *     @ReactMethod fun isAvailable(p: Promise) { p.resolve(checkRootOrShizuku()) }
  *   }
  */
 export interface RootShellModule {
   forceStopApp?: (packageName: string) => Promise<boolean>;
   clearAppCache?: (packageName: string) => Promise<boolean>;
+  suspendApp?: (packageName: string) => Promise<boolean>;
+  unsuspendApp?: (packageName: string) => Promise<boolean>;
+  enableApp?: (packageName: string) => Promise<boolean>;
   isAvailable?: () => Promise<boolean>;
 }
 
@@ -64,7 +79,7 @@ export function isValidPackageName(pkg: string): boolean {
 }
 
 async function callNative(
-  method: "forceStopApp" | "clearAppCache",
+  method: "forceStopApp" | "clearAppCache" | "suspendApp" | "unsuspendApp" | "enableApp",
   packageName: string,
 ): Promise<boolean> {
   const native = getNativeModule();
@@ -90,4 +105,16 @@ export function forceStopApp(packageName: string): Promise<boolean> {
 
 export function clearAppCache(packageName: string): Promise<boolean> {
   return callNative("clearAppCache", packageName);
+}
+
+export function suspendApp(packageName: string): Promise<boolean> {
+  return callNative("suspendApp", packageName);
+}
+
+export function unsuspendApp(packageName: string): Promise<boolean> {
+  return callNative("unsuspendApp", packageName);
+}
+
+export function enableApp(packageName: string): Promise<boolean> {
+  return callNative("enableApp", packageName);
 }
