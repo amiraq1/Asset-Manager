@@ -1,0 +1,29 @@
+Act as a Senior Full-Stack Engineer and System Architect. We are building a production-ready application. Your task is to plan, scaffold, and implement the complete project with zero placeholders and absolute attention to detail.
+
+### 1. Project Overview
+Project Name: [اسم المشروع، مثلاً: Nabd AI or App Manager]
+Description: [اكتب وصفاً دقيقاً لما يفعله التطبيق، مثلاً: A mobile-first web app that integrates local LLM inference with cloud syncing.]
+
+### 2. Tech Stack
+- **Frontend:** Next.js (App Router), Tailwind CSS, Lucide Icons.
+- **Backend/API:** Node.js / FastAPI (choose one or specify).
+- **Database & Auth:** Supabase.
+- **State Management:** [e.g., Zustand or Context API].
+
+### 3. Strict Development Rules (CRITICAL)
+- **NO PLACEHOLDERS:** Write 100% complete files. Never use comments like `// implement later` or `// add logic here`.
+- **Modularity:** Keep components small, reusable, and strictly typed.
+- **Error Handling:** Implement robust `try/catch` blocks. Do not let the app crash silently. Return standard error responses from APIs.
+- **Environment Variables:** Clearly specify any `.env` keys required before running the code.
+- **Styling:** Use Tailwind CSS for a modern, responsive, and dark-mode-ready UI.
+
+### 4. Execution Workflow (Step-by-Step)
+Do not rush. Execute the development in the following sequential phases. Wait for my approval after completing each phase before moving to the next.
+
+- **Phase 1: Project Setup & Architecture:** Initialize the repository, install all dependencies, and create the complete folder structure.
+- **Phase 2: Backend & Database:** Set up the database schema, Supabase clients, and core API endpoints.
+- **Phase 3: Frontend Foundations:** Build the core layouts, routing, and shared UI components (buttons, inputs, cards).
+- **Phase 4: Core Features Integration:** Connect the frontend to the backend APIs and implement the main business logic.
+- **Phase 5: Testing & Polish:** Fix any bugs, refine the UI/UX, and ensure error handling is fully functional.
+
+Are you ready? If so, acknowledge these rules and outline the folder structure for Phase 1 so I can review it before you write any code.
