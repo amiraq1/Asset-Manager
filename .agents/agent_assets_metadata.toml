@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "l-TQxYofnFCx2xiSmNn7u"
+uri = "file://artifacts/system-optimizer/assets/images/icon.png"
+type = "image"
+title = "optimizer-app-icon"

@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "System Optimizer & Cleaner"
+version = "1.0.0"
+id = "artifacts/system-optimizer"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 25671
+
+[services.development]
+run = "pnpm --filter @workspace/system-optimizer run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/system-optimizer", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/system-optimizer", "run", "serve" ]
+
+[services.env]
+PORT = "25671"
+BASE_PATH = "/"
