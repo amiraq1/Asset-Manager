@@ -110,8 +110,7 @@ export async function boostRam(packages: string[]): Promise<BoostResult> {
       }
     } catch (err) {
       log.warn(`force-stop failed for ${pkg}`, err);
-        failed.push(pkg);
-      }
+      failed.push(pkg);
     }
   }
 
