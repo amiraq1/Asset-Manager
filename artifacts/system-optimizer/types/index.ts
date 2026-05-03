@@ -27,7 +27,14 @@ export interface BatteryInfo {
   lowPowerMode: boolean;
 }
 
-export type JunkCategory = "cache" | "temp" | "log" | "other";
+export type JunkCategory =
+  | "cache"
+  | "temp"
+  | "log"
+  | "other"
+  | "obsoleteApk"
+  | "emptyFolder"
+  | "systemDeep";
 
 export interface JunkItem {
   uri: string;
@@ -35,6 +42,13 @@ export interface JunkItem {
   sizeBytes: number;
   modifiedAt: number;
   category: JunkCategory;
+  /**
+   * True for items that cannot be deleted from JS alone — they require
+   * the future `NativeModules.JunkScanner.deleteFiles()` bridge.
+   */
+  requiresNative?: boolean;
+  /** Optional human-readable note (e.g. why a native module is needed). */
+  note?: string;
 }
 
 export interface JunkCategorySummary {
