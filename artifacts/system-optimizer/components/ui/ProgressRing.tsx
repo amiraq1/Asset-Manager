@@ -1,8 +1,10 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 import { useColors } from "@/hooks/useColors";
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface Props {
   /** 0..1 */
@@ -12,6 +14,8 @@ interface Props {
   centerLabel?: string;
   centerSub?: string;
   color?: string;
+  /** Disable the entrance animation (useful for tests). */
+  animated?: boolean;
 }
 
 export function ProgressRing({
@@ -21,13 +25,33 @@ export function ProgressRing({
   centerLabel,
   centerSub,
   color,
+  animated = true,
 }: Props) {
   const colors = useColors();
   const tint = color ?? colors.primary;
   const safe = Math.max(0, Math.min(1, Number.isFinite(progress) ? progress : 0));
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference * (1 - safe);
+
+  const anim = useRef(new Animated.Value(animated ? 0 : safe)).current;
+
+  useEffect(() => {
+    if (!animated) {
+      anim.setValue(safe);
+      return;
+    }
+    Animated.timing(anim, {
+      toValue: safe,
+      duration: 900,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [safe, animated, anim]);
+
+  const dashOffset = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [circumference, 0],
+  });
 
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>
@@ -40,7 +64,7 @@ export function ProgressRing({
           strokeWidth={strokeWidth}
           fill="none"
         />
-        <Circle
+        <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -80,13 +104,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   label: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "700",
     fontFamily: "Cairo_700Bold",
   },
   sub: {
-    fontSize: 12,
-    marginTop: 4,
-    fontFamily: "Cairo_400Regular",
+    fontSize: 11,
+    marginTop: 2,
+    fontFamily: "Cairo_600SemiBold",
+    textAlign: "center",
+    paddingHorizontal: 6,
   },
 });

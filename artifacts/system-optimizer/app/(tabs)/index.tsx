@@ -1,9 +1,11 @@
 import { Feather } from "@expo/vector-icons";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Platform,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -12,14 +14,18 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { StatTile } from "@/components/ui/StatTile";
+import { useToast } from "@/components/ui/Toast";
 import { useBatteryInfo, useDeviceInfo } from "@/hooks/useDeviceInfo";
-import { useStorageInfo } from "@/hooks/useStorageInfo";
 import { useColors } from "@/hooks/useColors";
+import {
+  getRamUsage,
+  getStorageStats,
+  runQuickOptimize,
+} from "@/services/DeviceStats";
 import { useSettingsStore } from "@/store/settingsStore";
 import { formatBytes, formatPercent } from "@/utils/format";
 
@@ -31,26 +37,70 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
+  const toast = useToast();
   const locale = useSettingsStore((s) => s.locale);
 
-  const storage = useStorageInfo();
+  const ram = useQuery({
+    queryKey: ["ramUsage"],
+    queryFn: getRamUsage,
+    refetchInterval: 8000,
+  });
+  const storage = useQuery({
+    queryKey: ["storageStats"],
+    queryFn: getStorageStats,
+    refetchInterval: 30000,
+  });
   const device = useDeviceInfo();
   const battery = useBatteryInfo();
 
+  const [optimizing, setOptimizing] = useState(false);
+
   const onRefresh = useCallback(() => {
+    void ram.refetch();
     void storage.refetch();
     void device.refetch();
-  }, [storage, device]);
+  }, [ram, storage, device]);
+
+  const handleOptimize = useCallback(async () => {
+    if (optimizing) return;
+    setOptimizing(true);
+    try {
+      const result = await runQuickOptimize();
+      void ram.refetch();
+      void storage.refetch();
+      if (result.bytesFreed > 0) {
+        toast.show(
+          t("optimizer.optimizeDone", {
+            freed: formatBytes(result.bytesFreed, locale),
+            count: result.itemsCleaned,
+          }),
+          "success",
+        );
+      } else {
+        toast.show(t("optimizer.optimizeNothing"), "info");
+      }
+    } catch {
+      toast.show(t("optimizer.optimizeFailed"), "error");
+    } finally {
+      setOptimizing(false);
+    }
+  }, [optimizing, ram, storage, toast, t, locale]);
 
   const topPad =
     Platform.OS === "web" ? WEB_TOP_INSET + 16 : insets.top + 16;
   const bottomPad =
     Platform.OS === "web" ? TAB_BAR_HEIGHT + 24 : insets.bottom + TAB_BAR_HEIGHT + 8;
 
-  const used = storage.data?.usedBytes ?? 0;
-  const total = storage.data?.totalBytes ?? 0;
-  const free = storage.data?.freeBytes ?? 0;
-  const percent = storage.data?.usedPercent ?? 0;
+  const ramRatio = ram.data?.usedRatio ?? 0;
+  const storageRatio = storage.data?.usedRatio ?? 0;
+  const ramIsEstimate = ram.data?.source === "estimate";
+
+  const ringColor = (ratio: number) =>
+    ratio > 0.9
+      ? colors.danger
+      : ratio > 0.75
+        ? colors.warning
+        : colors.primary;
 
   const batteryStateLabel = (() => {
     switch (battery.info.state) {
@@ -76,7 +126,7 @@ export default function DashboardScreen() {
       }}
       refreshControl={
         <RefreshControl
-          refreshing={storage.isFetching || device.isFetching}
+          refreshing={ram.isFetching || storage.isFetching || device.isFetching}
           onRefresh={onRefresh}
           tintColor={colors.primary}
         />
@@ -91,49 +141,49 @@ export default function DashboardScreen() {
         </Text>
       </View>
 
-      <Card style={styles.storageCard}>
-        <SectionHeader title={t("dashboard.storage")} />
-        <View style={styles.ringRow}>
-          <ProgressRing
-            progress={percent}
-            centerLabel={formatPercent(percent, locale)}
-            centerSub={t("dashboard.storage")}
-            color={
-              percent > 0.9
-                ? colors.danger
-                : percent > 0.75
-                  ? colors.warning
-                  : colors.primary
+      {/* Hero metrics: animated RAM + Storage rings side-by-side */}
+      <Card style={styles.heroCard}>
+        <View style={styles.heroRow}>
+          <MetricRing
+            label={t("optimizer.ramUsed")}
+            icon="cpu"
+            ratio={ramRatio}
+            centerLabel={formatPercent(ramRatio, locale)}
+            color={ringColor(ramRatio)}
+            footerPrimary={
+              ram.data?.totalBytes
+                ? `${formatBytes(ram.data.usedBytes, locale)} / ${formatBytes(ram.data.totalBytes, locale)}`
+                : t("common.notAvailable")
+            }
+            footerSecondary={
+              ramIsEstimate ? t("optimizer.estimatedNotice") : undefined
+            }
+          />
+          <MetricRing
+            label={t("optimizer.storageUsed")}
+            icon="hard-drive"
+            ratio={storageRatio}
+            centerLabel={formatPercent(storageRatio, locale)}
+            color={ringColor(storageRatio)}
+            footerPrimary={
+              storage.data?.totalBytes
+                ? `${formatBytes(storage.data.usedBytes, locale)} / ${formatBytes(storage.data.totalBytes, locale)}`
+                : t("common.notAvailable")
+            }
+            footerSecondary={
+              storage.data
+                ? `${formatBytes(storage.data.freeBytes, locale)} ${t("optimizer.free")}`
+                : undefined
             }
           />
         </View>
-        <Text style={[styles.storageDetail, { color: colors.mutedForeground }]}>
-          {t("dashboard.storageUsed", {
-            used: formatBytes(used, locale),
-            total: formatBytes(total, locale),
-          })}
-        </Text>
       </Card>
 
-      <View style={styles.tilesRow}>
-        <StatTile
-          icon="hard-drive"
-          label={t("dashboard.storage")}
-          value={formatBytes(free, locale)}
-          helper={t("common.notAvailable") && undefined}
-          accentColor={colors.accent}
-        />
-        <StatTile
-          icon="cpu"
-          label={t("dashboard.ram")}
-          value={
-            device.data?.totalMemoryBytes
-              ? formatBytes(device.data.totalMemoryBytes, locale)
-              : t("common.notAvailable")
-          }
-          accentColor={colors.primary}
-        />
-      </View>
+      {/* Hero Quick-Optimize button */}
+      <QuickOptimizeButton
+        loading={optimizing}
+        onPress={() => void handleOptimize()}
+      />
 
       <View style={styles.tilesRow}>
         <StatTile
@@ -168,77 +218,179 @@ export default function DashboardScreen() {
 
       <Card>
         <SectionHeader title={t("dashboard.quickActions")} />
-        <View style={styles.actionsCol}>
-          <Button
-            label={t("dashboard.scanNow")}
+        <View style={styles.quickGrid}>
+          <QuickAction
             icon="search"
+            label={t("dashboard.scanNow")}
             onPress={() => router.push("/junk")}
-            fullWidth
           />
-          <Button
-            label={t("dashboard.cleanCache")}
+          <QuickAction
             icon="trash-2"
-            variant="secondary"
+            label={t("dashboard.cleanCache")}
             onPress={() => router.push("/cache")}
-            fullWidth
           />
-          <Button
-            label={t("dashboard.manageApps")}
+          <QuickAction
             icon="grid"
-            variant="secondary"
+            label={t("dashboard.manageApps")}
             onPress={() => router.push("/apps")}
-            fullWidth
+          />
+          <QuickAction
+            icon="settings"
+            label={t("tabs.settings")}
+            onPress={() => router.push("/settings")}
           />
         </View>
       </Card>
-
-      {device.data ? (
-        <Card>
-          <SectionHeader title={t("dashboard.deviceInfo")} />
-          <View style={styles.infoCol}>
-            <InfoRow label={t("dashboard.deviceInfo")} value={
-              [device.data.brand, device.data.modelName]
-                .filter(Boolean)
-                .join(" ")
-                || t("common.notAvailable")
-            } />
-            <InfoRow
-              label="OS"
-              value={
-                device.data.osName && device.data.osVersion
-                  ? `${device.data.osName} ${device.data.osVersion}`
-                  : t("common.notAvailable")
-              }
-            />
-            <InfoRow
-              label={t("dashboard.ramTotal")}
-              value={
-                device.data.totalMemoryBytes
-                  ? formatBytes(device.data.totalMemoryBytes, locale)
-                  : t("common.notAvailable")
-              }
-            />
-          </View>
-        </Card>
-      ) : null}
     </ScrollView>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function MetricRing({
+  label,
+  icon,
+  ratio,
+  centerLabel,
+  color,
+  footerPrimary,
+  footerSecondary,
+}: {
+  label: string;
+  icon: keyof typeof Feather.glyphMap;
+  ratio: number;
+  centerLabel: string;
+  color: string;
+  footerPrimary: string;
+  footerSecondary?: string;
+}) {
   const colors = useColors();
   return (
-    <View style={styles.infoRow}>
-      <Text style={[styles.infoLabel, { color: colors.mutedForeground }]}>
-        {label}
-      </Text>
+    <View style={styles.metricCol}>
+      <View style={styles.metricHeader}>
+        <Feather name={icon} size={14} color={colors.mutedForeground} />
+        <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+          {label}
+        </Text>
+      </View>
+      <ProgressRing
+        progress={ratio}
+        size={130}
+        strokeWidth={11}
+        centerLabel={centerLabel}
+        color={color}
+      />
       <Text
-        style={[styles.infoValue, { color: colors.foreground }]}
+        style={[styles.metricFooter, { color: colors.foreground }]}
         numberOfLines={1}
       >
-        {value}
+        {footerPrimary}
       </Text>
+      {footerSecondary ? (
+        <Text
+          style={[styles.metricNote, { color: colors.mutedForeground }]}
+          numberOfLines={3}
+        >
+          {footerSecondary}
+        </Text>
+      ) : null}
     </View>
+  );
+}
+
+function QuickOptimizeButton({
+  loading,
+  onPress,
+}: {
+  loading: boolean;
+  onPress: () => void;
+}) {
+  const colors = useColors();
+  const { t } = useTranslation();
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={loading}
+      style={({ pressed }) => [
+        styles.optimizeBtn,
+        {
+          backgroundColor: colors.primary,
+          borderRadius: colors.radius,
+          opacity: loading ? 0.85 : pressed ? 0.92 : 1,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.optimizeIconBubble,
+          { backgroundColor: colors.primaryForeground + "22" },
+        ]}
+      >
+        <Feather
+          name={loading ? "loader" : "zap"}
+          size={22}
+          color={colors.primaryForeground}
+        />
+      </View>
+      <View style={styles.optimizeTextCol}>
+        <Text
+          style={[styles.optimizeLabel, { color: colors.primaryForeground }]}
+          numberOfLines={1}
+        >
+          {loading ? t("optimizer.optimizing") : t("optimizer.quickOptimize")}
+        </Text>
+        <Text
+          style={[
+            styles.optimizeHint,
+            { color: colors.primaryForeground, opacity: 0.85 },
+          ]}
+          numberOfLines={1}
+        >
+          {t("dashboard.subtitle")}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function QuickAction({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
+  const colors = useColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.quickAction,
+        {
+          backgroundColor: pressed ? colors.muted : colors.secondary,
+          borderColor: colors.border,
+          borderRadius: colors.radius - 4,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.quickActionIcon,
+          {
+            backgroundColor: colors.background,
+            borderRadius: colors.radius - 6,
+          },
+        ]}
+      >
+        <Feather name={icon} size={18} color={colors.primary} />
+      </View>
+      <Text
+        style={[styles.quickActionLabel, { color: colors.foreground }]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -253,30 +405,89 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Cairo_400Regular",
   },
-  storageCard: { alignItems: "center", gap: 16 },
-  ringRow: { paddingVertical: 8 },
-  storageDetail: {
-    fontSize: 13,
+  heroCard: { paddingVertical: 16 },
+  heroRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  metricCol: {
+    flex: 1,
+    alignItems: "center",
+    gap: 8,
+  },
+  metricHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  metricLabel: {
+    fontSize: 12,
+    fontFamily: "Cairo_600SemiBold",
+  },
+  metricFooter: {
+    fontSize: 12,
+    fontFamily: "Cairo_600SemiBold",
+    textAlign: "center",
+    marginTop: 2,
+  },
+  metricNote: {
+    fontSize: 10,
     fontFamily: "Cairo_400Regular",
     textAlign: "center",
+    paddingHorizontal: 6,
+    lineHeight: 14,
   },
-  tilesRow: { flexDirection: "row", gap: 12 },
-  actionsCol: { gap: 10 },
-  infoCol: { gap: 10 },
-  infoRow: {
+  optimizeBtn: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
+    gap: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    minHeight: 76,
   },
-  infoLabel: {
-    fontSize: 13,
+  optimizeIconBubble: {
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  optimizeTextCol: { flex: 1, gap: 2 },
+  optimizeLabel: {
+    fontSize: 18,
+    fontFamily: "Cairo_700Bold",
+  },
+  optimizeHint: {
+    fontSize: 12,
     fontFamily: "Cairo_400Regular",
   },
-  infoValue: {
-    fontSize: 14,
+  tilesRow: { flexDirection: "row", gap: 12 },
+  quickGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  quickAction: {
+    flexBasis: "48%",
+    flexGrow: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  quickActionIcon: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quickActionLabel: {
+    flex: 1,
+    fontSize: 13,
     fontFamily: "Cairo_600SemiBold",
-    flexShrink: 1,
-    textAlign: "right",
   },
 });

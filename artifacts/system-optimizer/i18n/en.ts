@@ -110,6 +110,19 @@ const en: AppTranslations = {
       "This app runs entirely on-device and does not send any data to any server.",
     rtlNotice: "Right-to-left reading direction is enabled",
   },
+  optimizer: {
+    quickOptimize: "Quick Optimize",
+    optimizing: "Scanning…",
+    optimizeDone: "Optimization complete — freed {{freed}} ({{count}} items)",
+    optimizeNothing: "All clean! No files to remove.",
+    optimizeFailed: "Could not complete optimization.",
+    ramUsed: "RAM",
+    storageUsed: "Storage",
+    estimatedNotice:
+      "RAM usage shown is an estimate — it becomes a live reading once the DeviceStats native module is installed.",
+    used: "used",
+    free: "free",
+  },
   rootShell: {
     sectionTitle: "Advanced actions (root required)",
     sectionDescription:

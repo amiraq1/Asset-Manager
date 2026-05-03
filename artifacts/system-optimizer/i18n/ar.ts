@@ -108,6 +108,19 @@ const ar = {
       "هذا التطبيق يعمل محلياً بالكامل ولا يرسل أي بيانات إلى أي خادم.",
     rtlNotice: "تم تفعيل اتجاه القراءة من اليمين إلى اليسار",
   },
+  optimizer: {
+    quickOptimize: "تحسين سريع",
+    optimizing: "جارٍ الفحص...",
+    optimizeDone: "اكتمل التحسين — تم تحرير {{freed}} ({{count}} عنصر)",
+    optimizeNothing: "كل شيء نظيف! لا توجد ملفات لحذفها.",
+    optimizeFailed: "تعذّر إكمال التحسين.",
+    ramUsed: "الذاكرة العشوائية",
+    storageUsed: "التخزين",
+    estimatedNotice:
+      "قراءة استهلاك الذاكرة العشوائية تقديرية — ستصبح حيّة تماماً عند تثبيت الوحدة الأصلية DeviceStats.",
+    used: "مُستخدم",
+    free: "متاح",
+  },
   rootShell: {
     sectionTitle: "إجراءات متقدّمة (تتطلب الجذر)",
     sectionDescription:
