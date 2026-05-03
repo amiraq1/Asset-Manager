@@ -92,6 +92,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="agent"
+        options={{
+          title: t("tabs.agent"),
+          tabBarIcon: ({ color }) => (
+            <Feather name="cpu" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="cache"
         options={{
           href: null,

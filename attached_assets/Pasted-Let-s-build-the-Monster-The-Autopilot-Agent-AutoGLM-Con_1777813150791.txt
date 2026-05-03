@@ -1,0 +1,32 @@
+Let's build the "Monster": The **Autopilot Agent (AutoGLM Concept)** screen and service. This is a God-Mode feature where a local AI reasoning loop (ReAct) takes control of the device using our existing bridges and simulated Accessibility Services.
+
+Please implement the following with zero placeholders, keeping our strict Pro-Dark, hacker-chic aesthetic:
+
+### 1. Agent Service (`services/AutopilotService.ts`)
+Create a service that simulates the AI reasoning and execution loop:
+- Define `AgentStep` type: `{ id: string, type: 'vision' | 'thought' | 'action' | 'success', text: string, status: 'pending' | 'active' | 'completed' }`.
+- `executeIntent(intent: string, onUpdate: (steps: AgentStep[]) => void)`: An async function that simulates a complex workflow based on the user's intent.
+- **The Workflow Simulation (Hardcode this sequence for now):**
+  1. Add step: `[vision] "Requesting UI Hierarchy & Screen State..."` (Set active, wait 1s, set completed).
+  2. Add step: `[thought] "Analyzing intent: Requires kernel-level RAM drop and background app suspension."` (Set active, wait 1.2s, set completed).
+  3. Add step: `[action] "Triggering RootShell.forceDropCaches()..."` (Set active. *Crucial:* Actually call `RootShell.forceDropCaches()` here, catch the error/success, wait 1.5s, set completed).
+  4. Add step: `[success] "Workflow Complete. System optimized."`
+
+### 2. UI: Autopilot Screen (`app/(tabs)/autopilot.tsx`)
+Create the God-Mode dashboard:
+- **Header:** "Nabd Autopilot" with a `cpu` or `zap` icon.
+- **Input Area:** A prominent, glowing text input (e.g., "What should I optimize?") and a "Engage Autopilot" button with a primary futuristic color (e.g., electric blue or neon purple).
+- **The ReAct Visualizer (Live Stepper):** 
+  - Below the input, render the sequence of `AgentStep`s dynamically as they arrive from `executeIntent`.
+  - **Styling the Steps:**
+    - `vision`: Use an `eye` or `maximize` icon. When active, add a CSS pulsing/radar animation to the icon.
+    - `thought`: Use a `cpu` icon. When active, make the border glow.
+    - `action`: Use a `terminal` icon. Show it in bold text.
+    - `success`: Use a `check-circle` icon in green.
+  - Connect completed steps with a vertical line to make it look like a timeline.
+- **Integration:** Embed a small, 3-line version of the `LiveTerminal` component at the absolute bottom of this screen so the user sees the real commands being injected as the Agent runs.
+
+### 3. Navigation
+Replace one of the less critical tabs (or add a new one if space permits) with this `autopilot.tsx` screen. Use a `target` or `cpu` Feather icon for the tab bar.
+
+Make the animations smooth and the UI feel incredibly intelligent and alive.
