@@ -126,6 +126,18 @@ const en: AppTranslations = {
     boostedToast: "Boosted! {{mb}} MB of RAM freed",
     someFailed: "Could not stop {{count}} app(s)",
     allClean: "No apps are using memory right now.",
+    dangerZone: "Danger Zone",
+    dangerZoneHint: "Power-user tools — require Root or Shizuku.",
+    kernelDrop: "Kernel Drop (Force Clear)",
+    kernelDropSubtitle: "Maximum RAM reclaim at the kernel level",
+    confirmTitle: "WARNING: Nuclear RAM Clear",
+    confirmBody:
+      "This executes kernel-level shell commands (sync & drop_caches) to obliterate all cached background data and dentries. It grants maximum RAM but may cause a temporary stutter as apps reload from scratch. Proceed?",
+    cancel: "Cancel",
+    execute: "EXECUTE",
+    executing: "Executing kernel commands…",
+    kernelSuccess: "Kernel drop complete — system RAM reclaimed.",
+    kernelFailed: "Kernel drop failed. Check root permissions.",
   },
   junkDeep: {
     radarLabel: "Scanning system",

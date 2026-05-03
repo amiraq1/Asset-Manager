@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   Animated,
   Easing,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -18,6 +19,10 @@ import { Card } from "@/components/ui/Card";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { useToast } from "@/components/ui/Toast";
 import { useColors } from "@/hooks/useColors";
+import {
+  forceDropCaches,
+  NativeModuleUnavailableError,
+} from "@/services/RootShell";
 import { boostRam, getRunningApps, type RunningApp } from "@/services/TaskManager";
 import { useSettingsStore } from "@/store/settingsStore";
 import { formatNumber } from "@/utils/format";
@@ -37,6 +42,8 @@ export default function BoostScreen() {
   const [loading, setLoading] = useState(true);
   const [boosting, setBoosting] = useState(false);
   const [removing, setRemoving] = useState<Set<string>>(new Set());
+  const [kernelModalOpen, setKernelModalOpen] = useState(false);
+  const [kernelExecuting, setKernelExecuting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -132,6 +139,29 @@ export default function BoostScreen() {
     }
   };
 
+  const handleKernelDrop = async () => {
+    setKernelExecuting(true);
+    // Hold the dramatic UI state for ~1.4s before hitting the bridge
+    // so the user perceives the gravity of the operation.
+    await new Promise((r) => setTimeout(r, 1400));
+    try {
+      const ok = await forceDropCaches();
+      toast.show(
+        ok ? t("boost.kernelSuccess") : t("boost.kernelFailed"),
+        ok ? "success" : "error",
+      );
+    } catch (err) {
+      if (err instanceof NativeModuleUnavailableError) {
+        toast.show(err.message, "warning");
+      } else {
+        toast.show(t("boost.kernelFailed"), "error");
+      }
+    } finally {
+      setKernelExecuting(false);
+      setKernelModalOpen(false);
+    }
+  };
+
   const topPad = Platform.OS === "web" ? WEB_TOP_INSET + 16 : insets.top + 16;
   const bottomPad =
     Platform.OS === "web" ? TAB_BAR_HEIGHT + 24 : insets.bottom + TAB_BAR_HEIGHT + 8;
@@ -210,7 +240,21 @@ export default function BoostScreen() {
             ))}
           </Card>
         )}
+
+        <DangerZone
+          onPress={() => setKernelModalOpen(true)}
+          disabled={boosting || kernelExecuting}
+        />
       </ScrollView>
+
+      <KernelConfirmModal
+        visible={kernelModalOpen}
+        executing={kernelExecuting}
+        onCancel={() => {
+          if (!kernelExecuting) setKernelModalOpen(false);
+        }}
+        onExecute={() => void handleKernelDrop()}
+      />
 
       <View
         style={[
@@ -334,6 +378,192 @@ function AppRow({
         </View>
       </Pressable>
     </Animated.View>
+  );
+}
+
+function DangerZone({
+  onPress,
+  disabled,
+}: {
+  onPress: () => void;
+  disabled: boolean;
+}) {
+  const colors = useColors();
+  const { t } = useTranslation();
+  const DANGER = colors.destructive;
+
+  return (
+    <View style={dz.wrap}>
+      <View style={dz.headerRow}>
+        <View style={[dz.headerStripe, { backgroundColor: DANGER }]} />
+        <Text style={[dz.headerLabel, { color: DANGER }]}>
+          {t("boost.dangerZone")}
+        </Text>
+        <View style={[dz.headerStripe, { backgroundColor: DANGER }]} />
+      </View>
+      <Text style={[dz.hint, { color: colors.mutedForeground }]}>
+        {t("boost.dangerZoneHint")}
+      </Text>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        style={({ pressed }) => [
+          dz.btn,
+          {
+            backgroundColor: DANGER,
+            borderColor: DANGER,
+            borderRadius: colors.radius,
+            opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
+          },
+        ]}
+      >
+        <View style={dz.btnIconBubble}>
+          <Feather name="alert-triangle" size={22} color="#FFFFFF" />
+        </View>
+        <View style={dz.btnTextCol}>
+          <Text style={dz.btnTitle}>{t("boost.kernelDrop")}</Text>
+          <Text style={dz.btnSubtitle}>
+            {t("boost.kernelDropSubtitle")}
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={18} color="#FFFFFF" />
+      </Pressable>
+    </View>
+  );
+}
+
+function KernelConfirmModal({
+  visible,
+  executing,
+  onCancel,
+  onExecute,
+}: {
+  visible: boolean;
+  executing: boolean;
+  onCancel: () => void;
+  onExecute: () => void;
+}) {
+  const colors = useColors();
+  const { t } = useTranslation();
+  const DANGER = colors.destructive;
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!executing) {
+      pulse.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 450,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0,
+          duration: 450,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [executing, pulse]);
+
+  const borderWidth = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 4],
+  });
+  const borderOpacity = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.4, 1],
+  });
+
+  // Force a dark, dramatic surface regardless of theme.
+  const SURFACE = "#0B0B0F";
+  const SURFACE_BORDER = "#1F1F26";
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+      statusBarTranslucent
+    >
+      <View style={mdl.backdrop}>
+        <Animated.View
+          style={[
+            mdl.card,
+            {
+              backgroundColor: SURFACE,
+              borderColor: executing ? DANGER : SURFACE_BORDER,
+              borderWidth: executing ? borderWidth : 1,
+              opacity: executing ? borderOpacity : 1,
+              borderRadius: colors.radius,
+            },
+          ]}
+        >
+          <View style={[mdl.iconBubble, { backgroundColor: DANGER + "22" }]}>
+            <Feather name="alert-triangle" size={28} color={DANGER} />
+          </View>
+          <Text style={[mdl.title, { color: DANGER }]}>
+            {t("boost.confirmTitle")}
+          </Text>
+          <Text style={[mdl.body, { color: "#D4D4DC" }]}>
+            {t("boost.confirmBody")}
+          </Text>
+
+          {executing ? (
+            <View style={mdl.executingRow}>
+              <Feather name="zap" size={14} color={DANGER} />
+              <Text style={[mdl.executingText, { color: DANGER }]}>
+                {t("boost.executing")}
+              </Text>
+            </View>
+          ) : (
+            <View style={mdl.actions}>
+              <Pressable
+                onPress={onCancel}
+                style={({ pressed }) => [
+                  mdl.actionBtn,
+                  mdl.cancelBtn,
+                  {
+                    borderColor: "#3A3A45",
+                    backgroundColor: pressed ? "#1A1A22" : "transparent",
+                    borderRadius: colors.radius - 4,
+                  },
+                ]}
+              >
+                <Text style={[mdl.actionLabel, { color: "#A0A0AE" }]}>
+                  {t("boost.cancel")}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={onExecute}
+                style={({ pressed }) => [
+                  mdl.actionBtn,
+                  mdl.executeBtn,
+                  {
+                    backgroundColor: DANGER,
+                    borderRadius: colors.radius - 4,
+                    opacity: pressed ? 0.85 : 1,
+                  },
+                ]}
+              >
+                <Feather name="zap" size={16} color="#FFFFFF" />
+                <Text style={[mdl.actionLabel, { color: "#FFFFFF" }]}>
+                  {t("boost.execute")}
+                </Text>
+              </Pressable>
+            </View>
+          )}
+        </Animated.View>
+      </View>
+    </Modal>
   );
 }
 
@@ -521,5 +751,128 @@ const styles = StyleSheet.create({
   boostLabel: {
     fontSize: 17,
     fontFamily: "Cairo_700Bold",
+  },
+});
+
+const dz = StyleSheet.create({
+  wrap: { gap: 10, paddingTop: 8 },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 4,
+  },
+  headerStripe: { flex: 1, height: 1, opacity: 0.5 },
+  headerLabel: {
+    fontSize: 12,
+    fontFamily: "Cairo_700Bold",
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+  },
+  hint: {
+    fontSize: 11,
+    fontFamily: "Cairo_400Regular",
+    textAlign: "center",
+    paddingHorizontal: 16,
+    lineHeight: 16,
+  },
+  btn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    minHeight: 72,
+  },
+  btnIconBubble: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnTextCol: { flex: 1, gap: 2 },
+  btnTitle: {
+    fontSize: 16,
+    fontFamily: "Cairo_700Bold",
+    color: "#FFFFFF",
+  },
+  btnSubtitle: {
+    fontSize: 11,
+    fontFamily: "Cairo_400Regular",
+    color: "rgba(255,255,255,0.85)",
+  },
+});
+
+const mdl = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.78)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  card: {
+    width: "100%",
+    maxWidth: 400,
+    padding: 24,
+    alignItems: "center",
+    gap: 14,
+  },
+  iconBubble: {
+    width: 56,
+    height: 56,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 18,
+    fontFamily: "Cairo_700Bold",
+    textAlign: "center",
+    letterSpacing: 0.5,
+  },
+  body: {
+    fontSize: 13,
+    fontFamily: "Cairo_400Regular",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 6,
+    width: "100%",
+  },
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 46,
+  },
+  cancelBtn: { borderWidth: 1 },
+  executeBtn: {},
+  actionLabel: {
+    fontSize: 14,
+    fontFamily: "Cairo_700Bold",
+    letterSpacing: 0.8,
+  },
+  executingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
+    paddingVertical: 8,
+  },
+  executingText: {
+    fontSize: 13,
+    fontFamily: "Cairo_700Bold",
+    letterSpacing: 0.8,
   },
 });
