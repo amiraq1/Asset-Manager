@@ -1,13 +1,6 @@
-/**
- * CommandLogger — singleton pub/sub for shell commands executed through
- * native bridges (RootShell, JunkScanner, ...). Powers the Live Terminal
- * screen so the user can see exactly which commands the app issued in
- * real time. No external state lib needed; React subscribes via
- * `useSyncExternalStore`.
- */
-
 export type LogStatus = "pending" | "success" | "error";
 export type LogSource = "ROOT" | "SHIZUKU" | "SYSTEM";
+export type LogType = "root" | "shizuku" | "fs" | "ai";
 
 export interface LogEntry {
   id: string;
@@ -17,31 +10,55 @@ export interface LogEntry {
   source: LogSource;
 }
 
+export interface SystemLog {
+  id: string;
+  timestamp: string;
+  command: string;
+  status: LogStatus;
+  type: LogType;
+}
+
 type Listener = () => void;
+type LogListener = (logs: SystemLog[]) => void;
 
 const MAX_LOGS = 500;
 
 class CommandLoggerImpl {
   private logs: LogEntry[] = [];
   private listeners = new Set<Listener>();
+
+  private systemListeners = new Set<LogListener>();
   private nextId = 1;
 
   getLogs = (): LogEntry[] => this.logs;
 
-  /** Adds a `pending` entry and returns its id so the caller can resolve it later. */
-  addLog(command: string, source: LogSource): string {
+  getSystemLogs(): SystemLog[] {
+    return this.logs.map((log) => ({
+      id: log.id,
+      timestamp: new Date(log.timestamp).toLocaleTimeString([], {
+        hour12: false,
+      }),
+      command: log.command,
+      status: log.status,
+      type: this.toLogType(log.source),
+    }));
+  }
+
+  addLog(command: string, source: LogSource | LogType): string {
+    const normalizedSource = this.toLogSource(source);
     const id = `cmd_${Date.now().toString(36)}_${this.nextId++}`;
+
     const entry: LogEntry = {
       id,
       timestamp: Date.now(),
       command,
       status: "pending",
-      source,
+      source: normalizedSource,
     };
-    // Push then trim so the array stays bounded — produces a new array
-    // reference so React's getSnapshot detects the change.
+
     const next = this.logs.concat(entry);
     this.logs = next.length > MAX_LOGS ? next.slice(next.length - MAX_LOGS) : next;
+
     this.notify();
     return id;
   }
@@ -49,9 +66,11 @@ class CommandLoggerImpl {
   updateLog(id: string, status: LogStatus): void {
     const idx = this.logs.findIndex((l) => l.id === id);
     if (idx === -1) return;
+
     const next = this.logs.slice();
     next[idx] = { ...next[idx], status };
     this.logs = next;
+
     this.notify();
   }
 
@@ -61,6 +80,10 @@ class CommandLoggerImpl {
     this.notify();
   }
 
+  clear(): void {
+    this.clearLogs();
+  }
+
   subscribe = (listener: Listener): (() => void) => {
     this.listeners.add(listener);
     return () => {
@@ -68,9 +91,47 @@ class CommandLoggerImpl {
     };
   };
 
+  subscribeSystem(listener: LogListener): () => void {
+    this.systemListeners.add(listener);
+    listener(this.getSystemLogs());
+    return () => {
+      this.systemListeners.delete(listener);
+    };
+  }
+
   private notify(): void {
-    for (const l of this.listeners) l();
+    for (const listener of this.listeners) listener();
+
+    const systemLogs = this.getSystemLogs();
+    for (const listener of this.systemListeners) listener(systemLogs);
+  }
+
+  private toLogSource(source: LogSource | LogType): LogSource {
+    switch (source) {
+      case "root":
+        return "ROOT";
+      case "shizuku":
+        return "SHIZUKU";
+      case "fs":
+      case "ai":
+        return "SYSTEM";
+      default:
+        return source;
+    }
+  }
+
+  private toLogType(source: LogSource): LogType {
+    switch (source) {
+      case "ROOT":
+        return "root";
+      case "SHIZUKU":
+        return "shizuku";
+      case "SYSTEM":
+      default:
+        return "fs";
+    }
   }
 }
 
 export const CommandLogger = new CommandLoggerImpl();
+export const commandLogger = CommandLogger;

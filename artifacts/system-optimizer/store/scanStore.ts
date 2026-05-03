@@ -20,6 +20,12 @@ export const useScanStore = create<ScanState>()(
     {
       name: "system-optimizer.scan",
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        ...state,
+        lastScan: state.lastScan
+          ? { ...state.lastScan, items: [] }
+          : null,
+      }),
     },
   ),
 );

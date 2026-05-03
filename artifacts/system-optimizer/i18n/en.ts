@@ -12,6 +12,9 @@ const en: AppTranslations = {
     agent: "Autopilot",
     cache: "Cache",
     apps: "Apps",
+    copilot: "Copilot",
+    terminal: "Terminal",
+    gaming: "Gaming",
     settings: "Settings",
   },
   dashboard: {
@@ -207,6 +210,9 @@ const en: AppTranslations = {
     packagePlaceholder: "e.g. com.whatsapp",
     forceStop: "Force Stop",
     clearCache: "Clear Cache",
+    suspend: "Suspend App",
+    unsuspend: "Unsuspend App",
+    enable: "Enable App",
     invalidPackage: "Invalid package name. Expected format: com.example.app",
     nativeRequired:
       "Native Module Required: this action will be executed via Root/Shizuku in the compiled production app.",

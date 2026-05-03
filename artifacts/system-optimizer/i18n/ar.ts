@@ -10,6 +10,9 @@ const ar = {
     agent: "Autopilot",
     cache: "الذاكرة المؤقتة",
     apps: "التطبيقات",
+    copilot: "المساعد",
+    terminal: "السجل",
+    gaming: "الألعاب",
     settings: "الإعدادات",
   },
   dashboard: {
@@ -205,6 +208,9 @@ const ar = {
     packagePlaceholder: "مثال: com.whatsapp",
     forceStop: "إيقاف إجباري",
     clearCache: "مسح الذاكرة المؤقتة",
+    suspend: "تجميد التطبيق",
+    unsuspend: "إلغاء التجميد",
+    enable: "تفعيل (إعادة للحياة)",
     invalidPackage: "اسم الحزمة غير صالح. يجب أن يكون مثل com.example.app",
     nativeRequired:
       "الوحدة الأصلية مطلوبة: سيتم تنفيذ هذا الإجراء عبر Root/Shizuku في نسخة الإنتاج المُجمَّعة.",

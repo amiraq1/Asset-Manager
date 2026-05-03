@@ -5,60 +5,25 @@ import { createLogger } from "@/utils/logger";
 
 const log = createLogger("RootShell");
 
-/**
- * Bridge to the (future) Android native module `RootShell`.
- *
- * IMPORTANT: unlike `DeepPermissions`, this bridge performs DESTRUCTIVE
- * operations — force-stopping apps and deleting their cache directories
- * via `su` / Shizuku. We deliberately do NOT simulate success when the
- * native module is missing. Instead callers receive a typed error so the
- * UI can show an honest "Native module required" message.
- *
- * Expected Kotlin contract (drop-in later):
- *
- *   class RootShellModule : ReactContextBaseJavaModule() {
- *     @ReactMethod fun forceStopApp(pkg: String, p: Promise) {
- *       val ok = executeRootCommand("am force-stop $pkg")
- *       p.resolve(ok)
- *     }
- *     @ReactMethod fun clearAppCache(pkg: String, p: Promise) {
- *       val ok = executeRootCommand(
- *         "rm -rf /data/data/$pkg/cache/* /data/data/$pkg/code_cache/* " +
- *         "/sdcard/Android/data/$pkg/cache/*"
- *       )
- *       p.resolve(ok)
- *     }
- *     @ReactMethod fun isAvailable(p: Promise) { p.resolve(checkRootOrShizuku()) }
- *   }
- */
 export interface RootShellModule {
   forceStopApp?: (packageName: string) => Promise<boolean>;
   clearAppCache?: (packageName: string) => Promise<boolean>;
+  suspendApp?: (packageName: string) => Promise<boolean>;
+  unsuspendApp?: (packageName: string) => Promise<boolean>;
+  enableApp?: (packageName: string) => Promise<boolean>;
   isAvailable?: () => Promise<boolean>;
-  /**
-   * Kernel-level RAM drop. Expected Kotlin contract:
-   *
-   *   @ReactMethod fun forceDropCaches(p: Promise) {
-   *     val ok = executeRootCommand("sync && echo 3 > /proc/sys/vm/drop_caches")
-   *     p.resolve(ok)
-   *   }
-   *
-   * Writing `3` flushes pagecache + dentries + inodes — the most aggressive
-   * non-destructive RAM reclaim available on Linux/Android kernels. Requires
-   * root or Shizuku because `/proc/sys/vm/drop_caches` is owned by root.
-   */
   forceDropCaches?: () => Promise<boolean>;
 }
 
 export class NativeModuleUnavailableError extends Error {
   public readonly code = "NATIVE_MODULE_UNAVAILABLE";
   public readonly method: string;
+
   constructor(method: string) {
     super(
       method === "forceDropCaches"
         ? "Kernel-level RAM drop requires Root/Shizuku."
-        : `RootShell.${method} is not available in this build. ` +
-            `It will be executed via Root/Shizuku in the compiled production app.`,
+        : `RootShell.${method} is not available in this build. It will be executed via Root/Shizuku in the compiled production app.`,
     );
     this.name = "NativeModuleUnavailableError";
     this.method = method;
@@ -81,27 +46,22 @@ export function isValidPackageName(pkg: string): boolean {
   return PACKAGE_NAME_RE.test(pkg.trim());
 }
 
-/**
- * Kernel-level RAM drop via `sync && echo 3 > /proc/sys/vm/drop_caches`.
- * Throws `NativeModuleUnavailableError` when the native bridge is missing —
- * we deliberately do NOT simulate this, because pretending the kernel was
- * flushed when it wasn't would mislead the user about real device state.
- */
 export async function forceDropCaches(): Promise<boolean> {
   const native = getNativeModule();
   const fn = native?.forceDropCaches;
   const source: LogSource = native ? "ROOT" : "SYSTEM";
+
   const logId = CommandLogger.addLog(
     "> sync && echo 3 > /proc/sys/vm/drop_caches && am kill-all",
     source,
   );
+
   if (!native || typeof fn !== "function") {
-    log.warn(
-      "RootShell.forceDropCaches aborted — native module not installed.",
-    );
+    log.warn("RootShell.forceDropCaches aborted — native module not installed.");
     CommandLogger.updateLog(logId, "error");
     throw new NativeModuleUnavailableError("forceDropCaches");
   }
+
   try {
     const ok = await fn.call(native);
     CommandLogger.updateLog(logId, ok ? "success" : "error");
@@ -114,32 +74,36 @@ export async function forceDropCaches(): Promise<boolean> {
 }
 
 const COMMAND_TEMPLATES: Record<
-  "forceStopApp" | "clearAppCache",
+  "forceStopApp" | "clearAppCache" | "suspendApp" | "unsuspendApp" | "enableApp",
   (pkg: string) => string
 > = {
   forceStopApp: (pkg) => `> am force-stop ${pkg}`,
   clearAppCache: (pkg) =>
     `> rm -rf /data/data/${pkg}/cache/* /sdcard/Android/data/${pkg}/cache/*`,
+  suspendApp: (pkg) => `> pm suspend ${pkg}`,
+  unsuspendApp: (pkg) => `> pm unsuspend ${pkg}`,
+  enableApp: (pkg) => `> pm enable ${pkg}`,
 };
 
 async function callNative(
-  method: "forceStopApp" | "clearAppCache",
+  method: "forceStopApp" | "clearAppCache" | "suspendApp" | "unsuspendApp" | "enableApp",
   packageName: string,
 ): Promise<boolean> {
   const native = getNativeModule();
   const fn = native?.[method];
   const source: LogSource = native ? "ROOT" : "SYSTEM";
+
   const logId = CommandLogger.addLog(
     COMMAND_TEMPLATES[method](packageName),
     source,
   );
+
   if (!native || typeof fn !== "function") {
-    log.warn(
-      `RootShell.${method}("${packageName}") aborted — native module not installed.`,
-    );
+    log.warn(`RootShell.${method}("${packageName}") aborted — native module not installed.`);
     CommandLogger.updateLog(logId, "error");
     throw new NativeModuleUnavailableError(method);
   }
+
   try {
     const ok = await fn.call(native, packageName);
     CommandLogger.updateLog(logId, ok ? "success" : "error");
@@ -157,4 +121,16 @@ export function forceStopApp(packageName: string): Promise<boolean> {
 
 export function clearAppCache(packageName: string): Promise<boolean> {
   return callNative("clearAppCache", packageName);
+}
+
+export function suspendApp(packageName: string): Promise<boolean> {
+  return callNative("suspendApp", packageName);
+}
+
+export function unsuspendApp(packageName: string): Promise<boolean> {
+  return callNative("unsuspendApp", packageName);
+}
+
+export function enableApp(packageName: string): Promise<boolean> {
+  return callNative("enableApp", packageName);
 }

@@ -73,6 +73,17 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="gaming"
+        options={{
+          title: t("tabs.gaming"),
+          tabBarIcon: ({ color }) => (
+            <Feather name="play-circle" size={22} color={color} />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="junk"
         options={{
@@ -82,6 +93,7 @@ export default function TabLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
         name="boost"
         options={{
@@ -91,6 +103,7 @@ export default function TabLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
         name="agent"
         options={{
@@ -100,13 +113,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="cache"
-        options={{
-          href: null,
-          title: t("tabs.cache"),
-        }}
-      />
+
       <Tabs.Screen
         name="apps"
         options={{
@@ -116,15 +123,12 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: t("tabs.settings"),
-          tabBarIcon: ({ color }) => (
-            <Feather name="settings" size={22} color={color} />
-          ),
-        }}
-      />
+
+      {/* Hidden screens */}
+      <Tabs.Screen name="cache" options={{ href: null }} />
+      <Tabs.Screen name="copilot" options={{ href: null }} />
+      <Tabs.Screen name="terminal" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );
 }

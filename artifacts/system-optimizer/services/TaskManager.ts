@@ -104,17 +104,13 @@ export async function boostRam(packages: string[]): Promise<BoostResult> {
         }
       } else {
         // No native bridge — count as simulated success so the UI flow works.
-        throw new NativeModuleUnavailableError("forceStopApp");
-      }
-    } catch (err) {
-      if (err instanceof NativeModuleUnavailableError) {
         simulated = true;
         stopped.push(pkg);
         freedMb += estimateRamMb(pkg);
-      } else {
-        log.warn(`force-stop failed for ${pkg}`, err);
-        failed.push(pkg);
       }
+    } catch (err) {
+      log.warn(`force-stop failed for ${pkg}`, err);
+      failed.push(pkg);
     }
   }
 

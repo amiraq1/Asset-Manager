@@ -12,6 +12,9 @@ const EMPTY: Record<JunkCategory, { count: number; bytes: number }> = {
   temp: { count: 0, bytes: 0 },
   log: { count: 0, bytes: 0 },
   other: { count: 0, bytes: 0 },
+  obsoleteApk: { count: 0, bytes: 0 },
+  emptyFolder: { count: 0, bytes: 0 },
+  systemDeep: { count: 0, bytes: 0 },
 };
 
 function categorize(name: string, parentDir: string): JunkCategory {

@@ -76,12 +76,17 @@ async function findEmptyFolders(): Promise<JunkItem[]> {
  * placeholder row labelled "Requires Native Module" so the user knows
  * what they'd unlock once Kotlin lands.
  */
+import { commandLogger } from "./CommandLogger";
+
 async function getDeepSystemJunk(): Promise<{
   items: JunkItem[];
   nativeAvailable: boolean;
 }> {
+  const logId = commandLogger.addLog("> find / -name '*cache*' -size +100k", "fs");
+  
   const native = getNativeModule();
   if (!native?.getDeepSystemJunk) {
+    commandLogger.updateLog(logId, "error");
     return { items: [], nativeAvailable: false };
   }
   try {
@@ -94,9 +99,11 @@ async function getDeepSystemJunk(): Promise<{
       category: r.category ?? "systemDeep",
       requiresNative: true,
     }));
+    commandLogger.updateLog(logId, "success");
     return { items, nativeAvailable: true };
   } catch (err) {
     log.error("getDeepSystemJunk failed", err);
+    commandLogger.updateLog(logId, "error");
     return { items: [], nativeAvailable: false };
   }
 }
@@ -181,6 +188,10 @@ export async function cleanJunk(items: JunkItem[]): Promise<CleanJunkResult> {
   const accessible = items.filter((i) => !i.requiresNative);
   const restricted = items.filter((i) => i.requiresNative);
 
+  if (accessible.length > 0) {
+    commandLogger.addLog(`> rm -rf ${accessible.length} local items`, "fs");
+  }
+
   const local = await cleanCacheItems(accessible);
 
   let nativeDeleted = 0;
@@ -188,6 +199,7 @@ export async function cleanJunk(items: JunkItem[]): Promise<CleanJunkResult> {
   let pendingNative = 0;
 
   if (restricted.length > 0) {
+    const logId = commandLogger.addLog(`> rm -rf ${restricted.length} deep system items`, "fs");
     const native = getNativeModule();
     if (native?.deleteFiles) {
       try {
@@ -201,12 +213,15 @@ export async function cleanJunk(items: JunkItem[]): Promise<CleanJunkResult> {
           nativeDeleted = res.deletedBytes;
           nativeFailed = res.failed.length;
         }
+        commandLogger.updateLog(logId, "success");
       } catch (err) {
         log.error("native deleteFiles failed", err);
         nativeFailed += restricted.length;
+        commandLogger.updateLog(logId, "error");
       }
     } else {
       pendingNative = restricted.length;
+      commandLogger.updateLog(logId, "error");
     }
   }
 
