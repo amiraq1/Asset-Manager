@@ -3,8 +3,8 @@ import { createLogger } from "@/utils/logger";
 
 const log = createLogger("AutonomousAgent");
 
-export type StepStatus = "pending" | "active" | "success" | "error";
-export type StepType = "thought" | "vision" | "action";
+export type StepStatus = "pending" | "active" | "completed" | "error";
+export type StepType = "vision" | "thought" | "action" | "success";
 
 export interface AgentStep {
   id: string;
@@ -42,34 +42,30 @@ interface PlannedStep {
   abortOnError?: boolean;
 }
 
-function plan(prompt: string): PlannedStep[] {
+function plan(_prompt: string): PlannedStep[] {
   return [
     {
-      type: "thought",
-      text: `Analyzing intent: "${prompt.trim()}"`,
-      delayMs: 800,
-    },
-    {
       type: "vision",
-      text: "Requesting UI Hierarchy (Accessibility Node Info)...",
+      text: "Requesting UI Hierarchy & Screen State...",
       delayMs: 1000,
     },
     {
+      type: "thought",
+      text:
+        "Analyzing intent: Requires kernel-level RAM drop and background app suspension.",
+      delayMs: 1200,
+    },
+    {
       type: "action",
-      text: "Executing System Kernel Drop...",
-      delayMs: 200,
-      // Real side-effect: this triggers the Live Terminal entry too.
+      text: "Triggering RootShell.forceDropCaches()...",
+      delayMs: 1500,
+      // Real side-effect: also writes to the Live Terminal via CommandLogger.
       effect: () => forceDropCaches(),
     },
     {
-      type: "vision",
-      text: "Locating target app icon...",
-      delayMs: 800,
-    },
-    {
-      type: "action",
-      text: "Task Complete: Game launched.",
-      delayMs: 500,
+      type: "success",
+      text: "Workflow Complete. System optimized.",
+      delayMs: 400,
     },
   ];
 }
@@ -114,7 +110,7 @@ export async function executeTask(
       await Promise.all([sleep(p.delayMs), effectPromise]);
       steps[i] = {
         ...steps[i],
-        status: "success",
+        status: "completed",
         finishedAt: Date.now(),
       };
       emit();

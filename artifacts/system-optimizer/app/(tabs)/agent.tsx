@@ -29,13 +29,14 @@ const WEB_TOP_INSET = 67;
 const TAB_BAR_HEIGHT = 84;
 
 const STEP_ICON: Record<StepType, keyof typeof Feather.glyphMap> = {
+  vision: "maximize",
   thought: "cpu",
-  vision: "eye",
-  action: "zap",
+  action: "terminal",
+  success: "check-circle",
 };
 
-const ACCENT = "#22D3EE"; // active cyan
-const DONE = "#22C55E";   // success green
+const ACCENT = "#A855F7"; // electric neon purple — Autopilot signature
+const DONE = "#22C55E";   // completed green
 const FAIL = "#EF4444";   // error red
 
 export default function AgentScreen() {
@@ -129,6 +130,10 @@ export default function AgentScreen() {
             {
               backgroundColor: ACCENT,
               borderRadius: colors.radius,
+              shadowColor: ACCENT,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.55,
+              shadowRadius: 14,
               opacity:
                 running || prompt.trim().length === 0
                   ? 0.5
@@ -138,7 +143,7 @@ export default function AgentScreen() {
             },
           ]}
         >
-          <Feather name={running ? "loader" : "play"} size={18} color="#001018" />
+          <Feather name={running ? "loader" : "zap"} size={18} color="#FFFFFF" />
           <Text style={styles.startLabel}>
             {running ? t("agent.running") : t("agent.start")}
           </Text>
@@ -191,11 +196,22 @@ export default function AgentScreen() {
 function StepRow({ step, isLast }: { step: AgentStep; isLast: boolean }) {
   const colors = useColors();
   const isActive = step.status === "active";
-  const isDone = step.status === "success";
+  const isDone = step.status === "completed";
   const isError = step.status === "error";
   const isPending = step.status === "pending";
+  // 'success'-type steps are visually completed even at status 'completed' —
+  // and stand out with a green-forward palette regardless.
+  const isSuccessStep = step.type === "success";
 
-  const accent = isError ? FAIL : isDone ? DONE : isActive ? ACCENT : colors.border;
+  const accent = isError
+    ? FAIL
+    : isSuccessStep && (isDone || isActive)
+      ? DONE
+      : isDone
+        ? DONE
+        : isActive
+          ? ACCENT
+          : colors.border;
 
   // Pulse for active steps; vision steps get a faster, more urgent radar feel.
   const pulse = useRef(new Animated.Value(0)).current;
@@ -233,10 +249,11 @@ function StepRow({ step, isLast }: { step: AgentStep; isLast: boolean }) {
     outputRange: [0.55, 0],
   });
 
-  const iconName: keyof typeof Feather.glyphMap = isDone
-    ? "check"
-    : isError
-      ? "x"
+  // 'success' type keeps its check-circle icon even when completed.
+  const iconName: keyof typeof Feather.glyphMap = isError
+    ? "x"
+    : isDone && !isSuccessStep
+      ? "check"
       : STEP_ICON[step.type];
 
   return (
@@ -315,6 +332,10 @@ function StepRow({ step, isLast }: { step: AgentStep; isLast: boolean }) {
             {
               color: isPending ? colors.mutedForeground : colors.foreground,
               opacity: isPending ? 0.6 : 1,
+              fontFamily:
+                step.type === "action"
+                  ? "Cairo_700Bold"
+                  : "Cairo_600SemiBold",
             },
           ]}
         >
