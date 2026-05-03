@@ -17,4 +17,11 @@
 //   export type InsertPost = z.infer<typeof insertPostSchema>;
 //   export type Post = typeof postsTable.$inferSelect;
 
-export {}
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+
+export const devices = pgTable("devices", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  deviceId: text("device_id").notNull().unique(),
+  osVersion: text("os_version"),
+  lastSync: timestamp("last_sync").defaultNow(),
+});

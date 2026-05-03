@@ -1,7 +1,7 @@
 import { NativeModules, Platform } from "react-native";
 import * as Device from "expo-device";
 
-import { cleanItems, scanJunk } from "@/services/JunkScannerService";
+import { cleanItems, scanForJunk } from "@/services/JunkScannerService";
 import { getStorageInfo } from "@/services/StorageService";
 import { createLogger } from "@/utils/logger";
 
@@ -167,7 +167,7 @@ export async function getStorageStats(): Promise<StorageStats> {
  */
 export async function runQuickOptimize(): Promise<QuickOptimizeResult> {
   const start = Date.now();
-  const scan = await scanJunk();
+  const scan = await scanForJunk();
   const result = await cleanItems(scan.items);
   return {
     bytesFreed: result.deletedBytes,
