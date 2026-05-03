@@ -12,6 +12,7 @@ const en: AppTranslations = {
     cache: "Cache",
     apps: "Apps",
     copilot: "Copilot",
+    terminal: "Terminal",
     settings: "Settings",
   },
   dashboard: {

@@ -10,6 +10,7 @@ const ar = {
     cache: "الذاكرة المؤقتة",
     apps: "التطبيقات",
     copilot: "المساعد",
+    terminal: "السجل",
     settings: "الإعدادات",
   },
   dashboard: {

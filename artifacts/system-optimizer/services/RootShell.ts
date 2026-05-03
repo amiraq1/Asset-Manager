@@ -1,46 +1,11 @@
 import { NativeModules, Platform } from "react-native";
-
 import { createLogger } from "@/utils/logger";
+import { commandLogger } from "./CommandLogger";
 
 const log = createLogger("RootShell");
 
 /**
  * Bridge to the (future) Android native module `RootShell`.
- *
- * IMPORTANT: unlike `DeepPermissions`, this bridge performs DESTRUCTIVE
- * operations — force-stopping apps and deleting their cache directories
- * via `su` / Shizuku. We deliberately do NOT simulate success when the
- * native module is missing. Instead callers receive a typed error so the
- * UI can show an honest "Native module required" message.
- *
- * Expected Kotlin contract (drop-in later):
- *
- *   class RootShellModule : ReactContextBaseJavaModule() {
- *     @ReactMethod fun forceStopApp(pkg: String, p: Promise) {
- *       val ok = executeRootCommand("am force-stop $pkg")
- *       p.resolve(ok)
- *     }
- *     @ReactMethod fun clearAppCache(pkg: String, p: Promise) {
- *       val ok = executeRootCommand(
- *         "rm -rf /data/data/$pkg/cache/* /data/data/$pkg/code_cache/* " +
- *         "/sdcard/Android/data/$pkg/cache/*"
- *       )
- *       p.resolve(ok)
- *     }
- *     @ReactMethod fun suspendApp(pkg: String, p: Promise) {
- *       val ok = executeRootCommand("pm suspend $pkg")
- *       p.resolve(ok)
- *     }
- *     @ReactMethod fun unsuspendApp(pkg: String, p: Promise) {
- *       val ok = executeRootCommand("pm unsuspend $pkg")
- *       p.resolve(ok)
- *     }
- *     @ReactMethod fun enableApp(pkg: String, p: Promise) {
- *       val ok = executeRootCommand("pm enable $pkg")
- *       p.resolve(ok)
- *     }
- *     @ReactMethod fun isAvailable(p: Promise) { p.resolve(checkRootOrShizuku()) }
- *   }
  */
 export interface RootShellModule {
   forceStopApp?: (packageName: string) => Promise<boolean>;
@@ -78,23 +43,42 @@ export function isValidPackageName(pkg: string): boolean {
   return PACKAGE_NAME_RE.test(pkg.trim());
 }
 
+const METHOD_COMMANDS: Record<string, string> = {
+  forceStopApp: "am force-stop",
+  clearAppCache: "rm -rf /data/data/$pkg/cache",
+  suspendApp: "pm suspend",
+  unsuspendApp: "pm unsuspend",
+  enableApp: "pm enable",
+};
+
 async function callNative(
   method: "forceStopApp" | "clearAppCache" | "suspendApp" | "unsuspendApp" | "enableApp",
   packageName: string,
 ): Promise<boolean> {
+  const baseCmd = METHOD_COMMANDS[method] || "sh";
+  const fullCmd = baseCmd.replace("$pkg", packageName) + " " + (method === "clearAppCache" ? "" : packageName);
+  
+  const logId = commandLogger.addLog(`> ${fullCmd}`, "root");
+  
+  // Simulate shell latency for visual feedback in Live Terminal
+  await new Promise(resolve => setTimeout(resolve, 500));
+
   const native = getNativeModule();
   const fn = native?.[method];
   if (!native || typeof fn !== "function") {
     log.warn(
       `RootShell.${method}("${packageName}") aborted — native module not installed.`,
     );
+    commandLogger.updateLog(logId, "error");
     throw new NativeModuleUnavailableError(method);
   }
   try {
     const ok = await fn.call(native, packageName);
+    commandLogger.updateLog(logId, ok ? "success" : "error");
     return Boolean(ok);
   } catch (err) {
     log.error(`RootShell.${method} failed`, err);
+    commandLogger.updateLog(logId, "error");
     throw err;
   }
 }

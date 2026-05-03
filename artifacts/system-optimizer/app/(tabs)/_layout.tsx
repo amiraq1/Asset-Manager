@@ -117,6 +117,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="terminal"
+        options={{
+          title: t("tabs.terminal"),
+          tabBarIcon: ({ color }) => (
+            <Feather name="terminal" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: t("tabs.settings"),
