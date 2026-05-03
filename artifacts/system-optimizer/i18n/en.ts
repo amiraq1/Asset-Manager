@@ -110,6 +110,39 @@ const en: AppTranslations = {
       "This app runs entirely on-device and does not send any data to any server.",
     rtlNotice: "Right-to-left reading direction is enabled",
   },
+  onboarding: {
+    title: "System permissions",
+    subtitle:
+      "The app needs deep permissions to unlock the full Android cleaning and optimization features.",
+    progress: "{{granted}} of {{total}} granted",
+    required: "Required",
+    grant: "Grant",
+    granted: "Granted",
+    requesting: "Requesting…",
+    continue: "Continue to app",
+    requirementHint:
+      "All required permissions must be granted to continue ({{count}}/{{total}}).",
+    devSimulation:
+      "Dev mode: the native module isn't installed yet, so the permission grant is simulated after 1 second. Replace with DeepPermissions.kt later.",
+    permissions: {
+      usageStats: {
+        name: "Usage stats",
+        why: "Read other apps' cache sizes for accurate reports. Uses PACKAGE_USAGE_STATS.",
+      },
+      manageStorage: {
+        name: "Manage all files",
+        why: "Deep clean across the entire internal storage. Uses MANAGE_EXTERNAL_STORAGE.",
+      },
+      accessibility: {
+        name: "Accessibility service",
+        why: "Auto force-stop apps by driving system Settings UI.",
+      },
+      root: {
+        name: "Root access",
+        why: "Full system file and process access (optional, requires a rooted device).",
+      },
+    },
+  },
   common: {
     retry: "Retry",
     error: "Something went wrong",

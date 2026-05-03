@@ -1,11 +1,15 @@
 import { Feather } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 
 import { useColors } from "@/hooks/useColors";
+import {
+  hasAllRequired,
+  usePermissionsStore,
+} from "@/store/permissionsStore";
 
 export default function TabLayout() {
   const colors = useColors();
@@ -14,6 +18,16 @@ export default function TabLayout() {
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
   const { t } = useTranslation();
+
+  const onboardingCompleted = usePermissionsStore(
+    (s) => s.onboardingCompleted,
+  );
+  const permissions = usePermissionsStore((s) => s.permissions);
+
+  // Gate the main app behind the permissions onboarding flow.
+  if (!onboardingCompleted || !hasAllRequired(permissions)) {
+    return <Redirect href="/onboarding" />;
+  }
 
   return (
     <Tabs

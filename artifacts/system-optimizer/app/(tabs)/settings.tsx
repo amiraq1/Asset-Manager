@@ -12,11 +12,14 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { useColors } from "@/hooks/useColors";
 import type { SupportedLocale } from "@/i18n";
 import { useSettingsStore, type ThemePref } from "@/store/settingsStore";
+import { usePermissionsStore } from "@/store/permissionsStore";
+import { useRouter } from "expo-router";
 
 const WEB_TOP_INSET = 67;
 const TAB_BAR_HEIGHT = 84;
@@ -37,10 +40,12 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
+  const router = useRouter();
   const locale = useSettingsStore((s) => s.locale);
   const setLocale = useSettingsStore((s) => s.setLocale);
   const theme = useSettingsStore((s) => s.theme);
   const setTheme = useSettingsStore((s) => s.setTheme);
+  const reopenOnboarding = usePermissionsStore((s) => s.reopenOnboarding);
 
   const topPad = Platform.OS === "web" ? WEB_TOP_INSET + 16 : insets.top + 16;
   const bottomPad =
@@ -134,6 +139,20 @@ export default function SettingsScreen() {
             );
           })}
         </View>
+      </Card>
+
+      <Card>
+        <SectionHeader title={t("onboarding.title")} />
+        <Button
+          label={t("onboarding.continue")}
+          icon="shield"
+          variant="secondary"
+          fullWidth
+          onPress={() => {
+            reopenOnboarding();
+            router.replace("/onboarding");
+          }}
+        />
       </Card>
 
       <Card>
