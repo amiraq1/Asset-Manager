@@ -108,6 +108,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="copilot"
+        options={{
+          title: t("tabs.copilot"),
+          tabBarIcon: ({ color }) => (
+            <Feather name="message-square" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: t("tabs.settings"),

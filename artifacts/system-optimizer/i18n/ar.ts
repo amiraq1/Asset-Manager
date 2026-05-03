@@ -9,6 +9,7 @@ const ar = {
     boost: "تسريع",
     cache: "الذاكرة المؤقتة",
     apps: "التطبيقات",
+    copilot: "المساعد",
     settings: "الإعدادات",
   },
   dashboard: {

@@ -11,6 +11,7 @@ const en: AppTranslations = {
     boost: "Boost",
     cache: "Cache",
     apps: "Apps",
+    copilot: "Copilot",
     settings: "Settings",
   },
   dashboard: {
