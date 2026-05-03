@@ -37,9 +37,43 @@ export interface QuickOptimizeResult {
   durationMs: number;
 }
 
+export interface InstalledApp {
+  packageName: string;
+  appName: string;
+  /** True when this entry comes from the bundled fallback list (not a live PackageManager query). */
+  isFallback: boolean;
+}
+
 interface DeviceStatsNativeModule {
   getRamUsage?: () => Promise<{ totalBytes: number; usedBytes: number }>;
+  getInstalledApps?: () => Promise<
+    Array<{ packageName: string; appName: string }>
+  >;
 }
+
+/**
+ * Curated list of common Android apps. Used as a fallback so the
+ * Task Manager / RAM Booster screen has something realistic to render
+ * before the native `PackageManager` bridge is wired in. Each entry is
+ * tagged `isFallback: true` so the UI can disclose this honestly.
+ */
+const FALLBACK_APPS: ReadonlyArray<{
+  packageName: string;
+  appName: string;
+}> = [
+  { packageName: "com.whatsapp", appName: "WhatsApp" },
+  { packageName: "com.android.chrome", appName: "Chrome" },
+  { packageName: "com.google.android.youtube", appName: "YouTube" },
+  { packageName: "com.facebook.katana", appName: "Facebook" },
+  { packageName: "com.instagram.android", appName: "Instagram" },
+  { packageName: "org.telegram.messenger", appName: "Telegram" },
+  { packageName: "com.twitter.android", appName: "X (Twitter)" },
+  { packageName: "com.zhiliaoapp.musically", appName: "TikTok" },
+  { packageName: "com.spotify.music", appName: "Spotify" },
+  { packageName: "com.google.android.gm", appName: "Gmail" },
+  { packageName: "com.google.android.apps.maps", appName: "Maps" },
+  { packageName: "com.snapchat.android", appName: "Snapchat" },
+];
 
 function getNativeModule(): DeviceStatsNativeModule | null {
   const mod = (NativeModules as Record<string, unknown>).DeviceStats;
@@ -87,6 +121,31 @@ export async function getRamUsage(): Promise<RamUsage> {
     usedRatio: used / total,
     source: "estimate",
   };
+}
+
+/**
+ * Returns the list of user-installed apps. When the native bridge is
+ * wired (via Android `PackageManager.getInstalledApplications`), this
+ * is the live list and `isFallback` is `false`. Otherwise we return a
+ * curated set of common apps so the Task Manager UI has something
+ * realistic to render in dev/Expo Go, with `isFallback: true` so the
+ * UI can disclose this clearly.
+ */
+export async function getInstalledApps(): Promise<InstalledApp[]> {
+  const native = getNativeModule();
+  if (native?.getInstalledApps) {
+    try {
+      const list = await native.getInstalledApps();
+      return list.map((a) => ({
+        packageName: a.packageName,
+        appName: a.appName,
+        isFallback: false,
+      }));
+    } catch (err) {
+      log.warn("native getInstalledApps failed, using fallback list", err);
+    }
+  }
+  return FALLBACK_APPS.map((a) => ({ ...a, isFallback: true }));
 }
 
 /** Real storage stats backed by `expo-file-system`. */

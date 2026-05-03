@@ -83,12 +83,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="boost"
+        options={{
+          title: t("tabs.boost"),
+          tabBarIcon: ({ color }) => (
+            <Feather name="zap" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="cache"
         options={{
+          href: null,
           title: t("tabs.cache"),
-          tabBarIcon: ({ color }) => (
-            <Feather name="database" size={22} color={color} />
-          ),
         }}
       />
       <Tabs.Screen

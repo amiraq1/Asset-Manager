@@ -8,6 +8,7 @@ const en: AppTranslations = {
   tabs: {
     dashboard: "Home",
     junk: "Scan",
+    boost: "Boost",
     cache: "Cache",
     apps: "Apps",
     settings: "Settings",
@@ -109,6 +110,22 @@ const en: AppTranslations = {
     privacyBody:
       "This app runs entirely on-device and does not send any data to any server.",
     rtlNotice: "Right-to-left reading direction is enabled",
+  },
+  boost: {
+    title: "RAM Booster",
+    subtitle: "Select apps to stop and free up memory",
+    summaryLabel: "{{count}} apps running",
+    fallbackNotice:
+      "Showing a sample app list for preview — replaced by the device's real list once the native module is installed.",
+    selectedSize: "Selected: {{mb}} MB",
+    selectedCount: "{{count}} apps",
+    boostNow: "Boost Now",
+    boosting: "Boosting…",
+    nothingSelected: "Select apps to boost",
+    nothingFreed: "No memory was freed.",
+    boostedToast: "Boosted! {{mb}} MB of RAM freed",
+    someFailed: "Could not stop {{count}} app(s)",
+    allClean: "No apps are using memory right now.",
   },
   junkDeep: {
     radarLabel: "Scanning system",
