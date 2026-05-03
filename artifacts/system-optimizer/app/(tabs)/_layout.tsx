@@ -74,6 +74,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="gaming"
+        options={{
+          title: t("tabs.gaming"),
+          tabBarIcon: ({ color }) => (
+            <Feather name="play-circle" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="junk"
         options={{
           title: t("tabs.junk"),
@@ -92,13 +101,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="cache"
-        options={{
-          href: null,
-          title: t("tabs.cache"),
-        }}
-      />
-      <Tabs.Screen
         name="apps"
         options={{
           title: t("tabs.apps"),
@@ -108,31 +110,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="cache"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
         name="copilot"
-        options={{
-          title: t("tabs.copilot"),
-          tabBarIcon: ({ color }) => (
-            <Feather name="message-square" size={22} color={color} />
-          ),
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="terminal"
-        options={{
-          title: t("tabs.terminal"),
-          tabBarIcon: ({ color }) => (
-            <Feather name="terminal" size={22} color={color} />
-          ),
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="settings"
-        options={{
-          title: t("tabs.settings"),
-          tabBarIcon: ({ color }) => (
-            <Feather name="settings" size={22} color={color} />
-          ),
-        }}
+        options={{ href: null }}
       />
     </Tabs>
   );

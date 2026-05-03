@@ -133,12 +133,25 @@ export default function DashboardScreen() {
       }
     >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.foreground }]}>
-          {t("dashboard.title")}
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-          {t("dashboard.subtitle")}
-        </Text>
+        <View style={styles.headerTitleRow}>
+          <View>
+            <Text style={[styles.title, { color: colors.foreground }]}>
+              {t("dashboard.title")}
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+              {t("dashboard.subtitle")}
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => router.push("/settings")}
+            style={({ pressed }) => [
+              styles.headerIconButton,
+              { backgroundColor: colors.muted, opacity: pressed ? 0.7 : 1 }
+            ]}
+          >
+            <Feather name="settings" size={20} color={colors.foreground} />
+          </Pressable>
+        </View>
       </View>
 
       {/* Hero metrics: animated RAM + Storage rings side-by-side */}
@@ -225,9 +238,9 @@ export default function DashboardScreen() {
             onPress={() => router.push("/junk")}
           />
           <QuickAction
-            icon="trash-2"
-            label={t("dashboard.cleanCache")}
-            onPress={() => router.push("/cache")}
+            icon="zap"
+            label={t("tabs.boost")}
+            onPress={() => router.push("/boost")}
           />
           <QuickAction
             icon="grid"
@@ -235,9 +248,19 @@ export default function DashboardScreen() {
             onPress={() => router.push("/apps")}
           />
           <QuickAction
-            icon="settings"
-            label={t("tabs.settings")}
-            onPress={() => router.push("/settings")}
+            icon="message-square"
+            label={t("tabs.copilot")}
+            onPress={() => router.push("/copilot")}
+          />
+          <QuickAction
+            icon="terminal"
+            label={t("tabs.terminal")}
+            onPress={() => router.push("/terminal")}
+          />
+          <QuickAction
+            icon="crosshair"
+            label="Deep Gaming"
+            onPress={() => router.push("/gaming")}
           />
         </View>
       </Card>
@@ -396,6 +419,18 @@ function QuickAction({
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: 4, gap: 4 },
+  headerTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  headerIconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   title: {
     fontSize: 28,
     fontWeight: "700",

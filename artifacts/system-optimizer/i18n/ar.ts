@@ -11,6 +11,7 @@ const ar = {
     apps: "التطبيقات",
     copilot: "المساعد",
     terminal: "السجل",
+    gaming: "الألعاب",
     settings: "الإعدادات",
   },
   dashboard: {

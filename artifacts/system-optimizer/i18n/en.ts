@@ -13,6 +13,7 @@ const en: AppTranslations = {
     apps: "Apps",
     copilot: "Copilot",
     terminal: "Terminal",
+    gaming: "Gaming",
     settings: "Settings",
   },
   dashboard: {
