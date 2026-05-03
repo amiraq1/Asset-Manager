@@ -1,0 +1,35 @@
+Let's build the **Live Terminal (Absolute Transparency)** feature. This will act as a system-level command logger that displays the actual shell commands executed by our bridges (like RootShell and JunkScanner) in real-time.
+
+Please implement the following with zero placeholders and maintain our strictly typed, Pro-Dark aesthetic:
+
+### 1. Global Logger Service (`services/CommandLogger.ts`)
+Create a custom Pub/Sub logger service (no external state libraries needed):
+- Define a `LogEntry` type: `{ id: string, timestamp: number, command: string, status: 'pending' | 'success' | 'error', source: 'ROOT' | 'SHIZUKU' | 'SYSTEM' }`.
+- Create a `CommandLogger` class/object with:
+  - An internal array of `logs`.
+  - `addLog(command, source)`: Adds a pending log, notifies listeners, and returns the log ID.
+  - `updateLog(id, status)`: Updates a specific log's status and notifies listeners.
+  - `clearLogs()`: Clears the array.
+  - `subscribe(listener)`: Allows UI to listen for changes.
+- Export a singleton instance of this logger.
+
+### 2. Bridge Integration
+Update `services/RootShell.ts` to use the `CommandLogger`:
+- For `forceStopApp`: Call `logger.addLog('> am force-stop ' + pkg, 'ROOT')` before the execution. If it succeeds (or is simulated), call `logger.updateLog(id, 'success')`. If it throws, call `logger.updateLog(id, 'error')`.
+- For `forceDropCaches`: Add the log `> sync && echo 3 > /proc/sys/vm/drop_caches && am kill-all` as pending. After the 1.4s delay or native execution, update it to success or error appropriately.
+
+### 3. UI: Live Terminal Screen (`app/terminal.tsx`)
+Create a dedicated screen that mimics a hacker/system terminal:
+- **Header:** "Live System Logs" with an action icon to "Clear" the logs.
+- **Terminal Container:** A dark container (`#000000` or `#050505`) taking up the remaining screen.
+- **Log List:** Use a `FlatList` (or `ScrollView`) to render the logs.
+  - **Auto-scroll:** It must automatically scroll to the bottom when a new log is added (using `ref.scrollToEnd`).
+  - **Font:** Use a monospace font (`Platform.select({ ios: 'Courier', android: 'monospace' })`).
+  - **Formatting:** Each line should look like: `[14:05:02] [ROOT] > am force-stop com.app`.
+  - **Colors:** Timestamps in dim gray, source in cyan/blue, command in white. Status colors: 'pending' (yellow/blink), 'success' (green), 'error' (red).
+- **Empty State:** If no logs, display a blinking cursor `_` or "Awaiting system commands...".
+
+### 4. Navigation
+Add a discreet button or menu item in the Settings screen (or as a top header button in the Dashboard) that navigates to `/terminal`. Use a `terminal` or `code` Feather icon.
+
+Make sure the terminal UI feels highly responsive and native.

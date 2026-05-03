@@ -156,6 +156,53 @@ export default function SettingsScreen() {
       </Card>
 
       <Card>
+        <SectionHeader
+          title={t("terminal.sectionTitle")}
+          subtitle={t("terminal.sectionDescription")}
+        />
+        <Pressable
+          onPress={() => router.push("/terminal")}
+          style={({ pressed }) => [
+            styles.terminalRow,
+            {
+              borderColor: colors.border,
+              backgroundColor: pressed ? colors.muted : "transparent",
+              borderRadius: colors.radius - 4,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.terminalIcon,
+              {
+                backgroundColor: "#0B0B0B",
+                borderRadius: colors.radius - 6,
+              },
+            ]}
+          >
+            <Feather name="terminal" size={18} color="#22C55E" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.terminalTitle, { color: colors.foreground }]}>
+              {t("terminal.openButton")}
+            </Text>
+            <Text
+              style={[styles.terminalHint, { color: colors.mutedForeground }]}
+              numberOfLines={2}
+            >
+              {t("terminal.openHint")}
+            </Text>
+          </View>
+          <Feather
+            name="chevron-left"
+            size={18}
+            color={colors.mutedForeground}
+            style={{ transform: [{ scaleX: locale === "ar" ? 1 : -1 }] }}
+          />
+        </Pressable>
+      </Card>
+
+      <Card>
         <SectionHeader title={t("settings.privacyTitle")} />
         <Text
           style={[
@@ -213,4 +260,28 @@ const styles = StyleSheet.create({
   },
   aboutLabel: { fontSize: 13, fontFamily: "Cairo_400Regular" },
   aboutValue: { fontSize: 14, fontFamily: "Cairo_600SemiBold" },
+  terminalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  terminalIcon: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  terminalTitle: {
+    fontSize: 14,
+    fontFamily: "Cairo_700Bold",
+  },
+  terminalHint: {
+    fontSize: 11,
+    fontFamily: "Cairo_400Regular",
+    marginTop: 2,
+    lineHeight: 16,
+  },
 });

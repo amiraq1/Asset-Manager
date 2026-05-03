@@ -1,5 +1,6 @@
 import { NativeModules, Platform } from "react-native";
 
+import { CommandLogger, type LogSource } from "@/services/CommandLogger";
 import { createLogger } from "@/utils/logger";
 
 const log = createLogger("RootShell");
@@ -89,20 +90,37 @@ export function isValidPackageName(pkg: string): boolean {
 export async function forceDropCaches(): Promise<boolean> {
   const native = getNativeModule();
   const fn = native?.forceDropCaches;
+  const source: LogSource = native ? "ROOT" : "SYSTEM";
+  const logId = CommandLogger.addLog(
+    "> sync && echo 3 > /proc/sys/vm/drop_caches && am kill-all",
+    source,
+  );
   if (!native || typeof fn !== "function") {
     log.warn(
       "RootShell.forceDropCaches aborted — native module not installed.",
     );
+    CommandLogger.updateLog(logId, "error");
     throw new NativeModuleUnavailableError("forceDropCaches");
   }
   try {
     const ok = await fn.call(native);
+    CommandLogger.updateLog(logId, ok ? "success" : "error");
     return Boolean(ok);
   } catch (err) {
     log.error("RootShell.forceDropCaches failed", err);
+    CommandLogger.updateLog(logId, "error");
     throw err;
   }
 }
+
+const COMMAND_TEMPLATES: Record<
+  "forceStopApp" | "clearAppCache",
+  (pkg: string) => string
+> = {
+  forceStopApp: (pkg) => `> am force-stop ${pkg}`,
+  clearAppCache: (pkg) =>
+    `> rm -rf /data/data/${pkg}/cache/* /sdcard/Android/data/${pkg}/cache/*`,
+};
 
 async function callNative(
   method: "forceStopApp" | "clearAppCache",
@@ -110,17 +128,25 @@ async function callNative(
 ): Promise<boolean> {
   const native = getNativeModule();
   const fn = native?.[method];
+  const source: LogSource = native ? "ROOT" : "SYSTEM";
+  const logId = CommandLogger.addLog(
+    COMMAND_TEMPLATES[method](packageName),
+    source,
+  );
   if (!native || typeof fn !== "function") {
     log.warn(
       `RootShell.${method}("${packageName}") aborted — native module not installed.`,
     );
+    CommandLogger.updateLog(logId, "error");
     throw new NativeModuleUnavailableError(method);
   }
   try {
     const ok = await fn.call(native, packageName);
+    CommandLogger.updateLog(logId, ok ? "success" : "error");
     return Boolean(ok);
   } catch (err) {
     log.error(`RootShell.${method} failed`, err);
+    CommandLogger.updateLog(logId, "error");
     throw err;
   }
 }

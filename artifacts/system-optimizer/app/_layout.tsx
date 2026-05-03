@@ -32,6 +32,10 @@ function RootLayoutNav() {
         name="onboarding"
         options={{ headerShown: false, gestureEnabled: false }}
       />
+      <Stack.Screen
+        name="terminal"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
     </Stack>
   );
 }

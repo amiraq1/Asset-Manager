@@ -139,6 +139,16 @@ const en: AppTranslations = {
     kernelSuccess: "Kernel drop complete — system RAM reclaimed.",
     kernelFailed: "Kernel drop failed. Check root permissions.",
   },
+  terminal: {
+    title: "Live System Logs",
+    sectionTitle: "Live Terminal",
+    sectionDescription:
+      "Absolute transparency — see every shell command executed by the native bridges in real time.",
+    openButton: "Open Live Terminal",
+    openHint: "Trace RootShell and JunkScanner commands as they run.",
+    connected: "Connected · {{count}} lines",
+    empty: "Awaiting system commands...",
+  },
   junkDeep: {
     radarLabel: "Scanning system",
     selectAll: "Select all",

@@ -137,6 +137,16 @@ const ar = {
     kernelSuccess: "تم إسقاط النواة — تحرير ذاكرة النظام بنجاح.",
     kernelFailed: "فشل إسقاط النواة. تحقّق من صلاحيات Root.",
   },
+  terminal: {
+    title: "السجلّ المباشر للنظام",
+    sectionTitle: "الطرفية المباشرة",
+    sectionDescription:
+      "شفافية كاملة — اعرض كل أمر Shell نُفِّذ من خلال الجسور الأصليّة لحظياً.",
+    openButton: "فتح الطرفية المباشرة",
+    openHint: "تتبّع أوامر RootShell و JunkScanner في الزمن الفعلي.",
+    connected: "متّصل · {{count}} سطر",
+    empty: "في انتظار أوامر النظام...",
+  },
   junkDeep: {
     radarLabel: "جارٍ فحص النظام",
     selectAll: "تحديد الكل",
