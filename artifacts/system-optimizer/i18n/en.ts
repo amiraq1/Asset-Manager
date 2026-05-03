@@ -110,6 +110,20 @@ const en: AppTranslations = {
       "This app runs entirely on-device and does not send any data to any server.",
     rtlNotice: "Right-to-left reading direction is enabled",
   },
+  rootShell: {
+    sectionTitle: "Advanced actions (root required)",
+    sectionDescription:
+      "These operations run directly against the system via root or Shizuku. Enter the target app's package name.",
+    packageLabel: "Package name",
+    packagePlaceholder: "e.g. com.whatsapp",
+    forceStop: "Force Stop",
+    clearCache: "Clear Cache",
+    invalidPackage: "Invalid package name. Expected format: com.example.app",
+    nativeRequired:
+      "Native Module Required: this action will be executed via Root/Shizuku in the compiled production app.",
+    success: "Action completed successfully on {{pkg}}.",
+    failed: "Action failed on {{pkg}}.",
+  },
   onboarding: {
     title: "System permissions",
     subtitle:

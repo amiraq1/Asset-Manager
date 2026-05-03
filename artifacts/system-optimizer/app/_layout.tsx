@@ -16,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { I18nextProvider } from "react-i18next";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ToastProvider } from "@/components/ui/Toast";
 import i18n, { initI18n, isRTL } from "@/i18n";
 import { useSettingsStore } from "@/store/settingsStore";
 
@@ -98,7 +99,9 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
-                <RootLayoutNav />
+                <ToastProvider>
+                  <RootLayoutNav />
+                </ToastProvider>
               </KeyboardProvider>
             </GestureHandlerRootView>
           </QueryClientProvider>

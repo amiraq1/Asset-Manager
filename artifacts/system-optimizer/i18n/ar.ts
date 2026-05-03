@@ -108,6 +108,20 @@ const ar = {
       "هذا التطبيق يعمل محلياً بالكامل ولا يرسل أي بيانات إلى أي خادم.",
     rtlNotice: "تم تفعيل اتجاه القراءة من اليمين إلى اليسار",
   },
+  rootShell: {
+    sectionTitle: "إجراءات متقدّمة (تتطلب الجذر)",
+    sectionDescription:
+      "هذه العمليات تُنفَّذ مباشرة على النظام عبر صلاحية الجذر أو Shizuku. أدخل اسم حزمة التطبيق المستهدف.",
+    packageLabel: "اسم الحزمة",
+    packagePlaceholder: "مثال: com.whatsapp",
+    forceStop: "إيقاف إجباري",
+    clearCache: "مسح الذاكرة المؤقتة",
+    invalidPackage: "اسم الحزمة غير صالح. يجب أن يكون مثل com.example.app",
+    nativeRequired:
+      "الوحدة الأصلية مطلوبة: سيتم تنفيذ هذا الإجراء عبر Root/Shizuku في نسخة الإنتاج المُجمَّعة.",
+    success: "تم تنفيذ الإجراء بنجاح على {{pkg}}.",
+    failed: "فشل تنفيذ الإجراء على {{pkg}}.",
+  },
   onboarding: {
     title: "صلاحيات النظام",
     subtitle:

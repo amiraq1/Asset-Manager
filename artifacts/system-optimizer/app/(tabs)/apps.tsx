@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Platform,
@@ -7,31 +7,74 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { useToast } from "@/components/ui/Toast";
 import { useColors } from "@/hooks/useColors";
 import { runShortcut, SYSTEM_SHORTCUTS } from "@/services/AppManagerService";
+import {
+  clearAppCache,
+  forceStopApp,
+  isValidPackageName,
+  NativeModuleUnavailableError,
+} from "@/services/RootShell";
 import { useSettingsStore } from "@/store/settingsStore";
 
 const WEB_TOP_INSET = 67;
 const TAB_BAR_HEIGHT = 84;
 
+type RootAction = "forceStop" | "clearCache";
+
 export default function AppsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const toast = useToast();
   const locale = useSettingsStore((s) => s.locale);
+
+  const [pkg, setPkg] = useState("");
+  const [pending, setPending] = useState<RootAction | null>(null);
 
   const topPad = Platform.OS === "web" ? WEB_TOP_INSET + 16 : insets.top + 16;
   const bottomPad =
     Platform.OS === "web" ? TAB_BAR_HEIGHT + 24 : insets.bottom + TAB_BAR_HEIGHT + 8;
 
   const isAndroid = Platform.OS === "android";
+
+  const runRootAction = async (action: RootAction) => {
+    const pkgTrim = pkg.trim();
+    if (!isValidPackageName(pkgTrim)) {
+      toast.show(t("rootShell.invalidPackage"), "warning");
+      return;
+    }
+    setPending(action);
+    try {
+      const fn = action === "forceStop" ? forceStopApp : clearAppCache;
+      const ok = await fn(pkgTrim);
+      toast.show(
+        t(ok ? "rootShell.success" : "rootShell.failed", { pkg: pkgTrim }),
+        ok ? "success" : "error",
+      );
+    } catch (err) {
+      if (err instanceof NativeModuleUnavailableError) {
+        toast.show(t("rootShell.nativeRequired"), "warning");
+      } else {
+        toast.show(
+          t("rootShell.failed", { pkg: pkgTrim }),
+          "error",
+        );
+      }
+    } finally {
+      setPending(null);
+    }
+  };
 
   return (
     <ScrollView
@@ -42,6 +85,7 @@ export default function AppsScreen() {
         paddingBottom: bottomPad,
         gap: 16,
       }}
+      keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.foreground }]}>
@@ -58,6 +102,62 @@ export default function AppsScreen() {
           title={t("apps.cannotListApps")}
           description={t("apps.cannotListAppsHint")}
         />
+      </Card>
+
+      <Card>
+        <SectionHeader
+          title={t("rootShell.sectionTitle")}
+          subtitle={t("rootShell.sectionDescription")}
+        />
+        <Text
+          style={[styles.inputLabel, { color: colors.mutedForeground }]}
+        >
+          {t("rootShell.packageLabel")}
+        </Text>
+        <TextInput
+          value={pkg}
+          onChangeText={setPkg}
+          placeholder={t("rootShell.packagePlaceholder")}
+          placeholderTextColor={colors.mutedForeground}
+          autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
+          keyboardType={Platform.OS === "ios" ? "url" : "default"}
+          textAlign={locale === "ar" ? "right" : "left"}
+          style={[
+            styles.input,
+            {
+              color: colors.foreground,
+              borderColor: colors.border,
+              backgroundColor: colors.muted,
+              borderRadius: colors.radius - 6,
+            },
+          ]}
+        />
+        <View style={styles.actionsRow}>
+          <View style={styles.actionItem}>
+            <Button
+              label={t("rootShell.forceStop")}
+              icon="stop-circle"
+              variant="danger"
+              fullWidth
+              loading={pending === "forceStop"}
+              disabled={pending !== null}
+              onPress={() => void runRootAction("forceStop")}
+            />
+          </View>
+          <View style={styles.actionItem}>
+            <Button
+              label={t("rootShell.clearCache")}
+              icon="trash-2"
+              variant="secondary"
+              fullWidth
+              loading={pending === "clearCache"}
+              disabled={pending !== null}
+              onPress={() => void runRootAction("clearCache")}
+            />
+          </View>
+        </View>
       </Card>
 
       <Card>
@@ -128,6 +228,21 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 4, gap: 4 },
   title: { fontSize: 28, fontWeight: "700", fontFamily: "Cairo_700Bold" },
   subtitle: { fontSize: 14, fontFamily: "Cairo_400Regular", lineHeight: 20 },
+  inputLabel: {
+    fontSize: 12,
+    fontFamily: "Cairo_600SemiBold",
+    marginBottom: 6,
+  },
+  input: {
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontFamily: "Cairo_400Regular",
+    marginBottom: 12,
+  },
+  actionsRow: { flexDirection: "row", gap: 8 },
+  actionItem: { flex: 1 },
   actionsCol: { gap: 8 },
   actionRow: {
     flexDirection: "row",
