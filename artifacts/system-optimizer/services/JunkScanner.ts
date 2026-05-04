@@ -24,10 +24,16 @@ interface JunkScannerNativeModule {
   ) => Promise<{ deletedBytes: number; failed: string[] }>;
 }
 
+import { requireNativeModule } from "expo-modules-core";
+
 function getNativeModule(): JunkScannerNativeModule | null {
-  const mod = (NativeModules as Record<string, unknown>).JunkScanner;
-  if (mod && typeof mod === "object") return mod as JunkScannerNativeModule;
-  return null;
+  try {
+    return requireNativeModule("JunkScanner") as JunkScannerNativeModule;
+  } catch (e) {
+    const mod = (NativeModules as Record<string, unknown>).JunkScanner;
+    if (mod && typeof mod === "object") return mod as JunkScannerNativeModule;
+    return null;
+  }
 }
 
 export function isNativeJunkScannerAvailable(): boolean {
