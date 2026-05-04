@@ -30,10 +30,16 @@ export class NativeModuleUnavailableError extends Error {
   }
 }
 
+import { requireNativeModule } from "expo-modules-core";
+
 function getNativeModule(): RootShellModule | null {
-  const mod = (NativeModules as Record<string, unknown>).RootShell;
-  if (mod && typeof mod === "object") return mod as RootShellModule;
-  return null;
+  try {
+    return requireNativeModule("RootShell") as RootShellModule;
+  } catch (e) {
+    const mod = (NativeModules as Record<string, unknown>).RootShell;
+    if (mod && typeof mod === "object") return mod as RootShellModule;
+    return null;
+  }
 }
 
 export function isRootShellAvailable(): boolean {
