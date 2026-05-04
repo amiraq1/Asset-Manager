@@ -108,13 +108,7 @@ export default function AppsScreen() {
         </Text>
       </View>
 
-      <Card>
-        <EmptyState
-          icon="lock"
-          title={t("apps.cannotListApps")}
-          description={t("apps.cannotListAppsHint")}
-        />
-      </Card>
+
 
       <Card>
         <SectionHeader
@@ -136,6 +130,8 @@ export default function AppsScreen() {
           spellCheck={false}
           keyboardType={Platform.OS === "ios" ? "url" : "default"}
           textAlign={locale === "ar" ? "right" : "left"}
+          accessibilityLabel={t("rootShell.packageLabel")}
+          accessibilityHint={t("rootShell.packagePlaceholder")}
           style={[
             styles.input,
             {
@@ -221,6 +217,8 @@ export default function AppsScreen() {
               <Pressable
                 key={s.id}
                 onPress={() => void runShortcut(s)}
+                accessibilityRole="button"
+                accessibilityLabel={t(s.titleKey)}
                 style={({ pressed }) => [
                   styles.actionRow,
                   {

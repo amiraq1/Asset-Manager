@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Platform,
-  ScrollView,
+  FlatList,
   StyleSheet,
   Text,
   View,
@@ -17,19 +17,13 @@ interface LiveTerminalProps {
 export function LiveTerminal({ autoScroll = true }: LiveTerminalProps) {
   const colors = useColors();
   const [logs, setLogs] = useState<SystemLog[]>([]);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<FlatList>(null);
 
   useEffect(() => {
     return commandLogger.subscribe((newLogs) => {
       setLogs(newLogs);
     });
   }, []);
-
-  const onContentSizeChange = () => {
-    if (autoScroll) {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    }
-  };
 
   const getLogColor = (log: SystemLog) => {
     if (log.status === "error") return "#ef4444"; // Red
@@ -43,36 +37,52 @@ export function LiveTerminal({ autoScroll = true }: LiveTerminalProps) {
     default: "monospace",
   });
 
+  const renderItem = ({ item: log }: { item: SystemLog }) => (
+    <View style={styles.logLine}>
+      <Text style={[styles.timestamp, { fontFamily: monoFont }]}>
+        [{log.timestamp}]
+      </Text>
+      <Text
+        style={[
+          styles.logText,
+          { color: getLogColor(log), fontFamily: monoFont },
+        ]}
+      >
+        {log.command}
+      </Text>
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: "#000" }]}>
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        onContentSizeChange={onContentSizeChange}
-      >
-        {logs.length === 0 ? (
+      {logs.length === 0 ? (
+        <View style={styles.content}>
           <Text style={[styles.logText, { color: "#3f3f46", fontFamily: monoFont }]}>
             [SYSTEM] Waiting for activity...
           </Text>
-        ) : (
-          logs.map((log) => (
-            <View key={log.id} style={styles.logLine}>
-              <Text style={[styles.timestamp, { fontFamily: monoFont }]}>
-                [{log.timestamp}]
-              </Text>
-              <Text
-                style={[
-                  styles.logText,
-                  { color: getLogColor(log), fontFamily: monoFont },
-                ]}
-              >
-                {log.command}
-              </Text>
-            </View>
-          ))
-        )}
-      </ScrollView>
+        </View>
+      ) : (
+        <FlatList
+          ref={scrollRef}
+          data={logs}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          onContentSizeChange={() => {
+            if (autoScroll && logs.length > 0) {
+              scrollRef.current?.scrollToEnd({ animated: true });
+            }
+          }}
+          onLayout={() => {
+            if (autoScroll && logs.length > 0) {
+              scrollRef.current?.scrollToEnd({ animated: true });
+            }
+          }}
+          initialNumToRender={30}
+          maxToRenderPerBatch={10}
+        />
+      )}
     </View>
   );
 }

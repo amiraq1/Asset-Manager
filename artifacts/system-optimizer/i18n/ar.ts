@@ -164,6 +164,23 @@ const ar = {
     connected: "متّصل · {{count}} سطر",
     empty: "في انتظار أوامر النظام...",
   },
+  gaming: {
+    title: "وضع الألعاب المتقدّم",
+    systemStatus: "حالة النظام",
+    lockdownReady: "جاهز للإغلاق",
+    ramUsed: "{{percent}}% ذاكرة مُستخدمة",
+    installedGames: "الألعاب المثبّتة",
+    lockdownTitle: "إغلاق النظام",
+    ramFreed: "+{{mb}} ميغا تم تحريرها",
+    launchHint: "تشغيل اللعبة في وضع الأداء العالي",
+    steps: {
+      initiating: "جارٍ بدء بروتوكول الإغلاق...",
+      freezing: "جارٍ تجميد العمليات في الخلفية...",
+      clearing: "جارٍ مسح ذاكرة النظام المؤقتة...",
+      allocating: "جارٍ تخصيص الحد الأقصى من الموارد...",
+      complete: "اكتمل الإغلاق. جارٍ التشغيل...",
+    },
+  },
   junkDeep: {
     radarLabel: "جارٍ فحص النظام",
     selectAll: "تحديد الكل",

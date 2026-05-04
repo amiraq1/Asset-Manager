@@ -79,6 +79,9 @@ export default function SettingsScreen() {
               <Pressable
                 key={opt.value}
                 onPress={() => setLocale(opt.value)}
+                accessibilityRole="radio"
+                accessibilityLabel={t(opt.key)}
+                accessibilityState={{ selected: active }}
                 style={({ pressed }) => [
                   styles.segItem,
                   {
@@ -111,6 +114,9 @@ export default function SettingsScreen() {
               <Pressable
                 key={opt.value}
                 onPress={() => setTheme(opt.value)}
+                accessibilityRole="radio"
+                accessibilityLabel={t(opt.key)}
+                accessibilityState={{ selected: active }}
                 style={({ pressed }) => [
                   styles.themeRow,
                   {

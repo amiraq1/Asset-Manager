@@ -166,6 +166,23 @@ const en: AppTranslations = {
     connected: "Connected · {{count}} lines",
     empty: "Awaiting system commands...",
   },
+  gaming: {
+    title: "Deep Gaming Mode",
+    systemStatus: "SYSTEM STATUS",
+    lockdownReady: "LOCKDOWN READY",
+    ramUsed: "{{percent}}% RAM Used",
+    installedGames: "INSTALLED GAMES",
+    lockdownTitle: "SYSTEM LOCKDOWN",
+    ramFreed: "+{{mb}}MB RAM FREED",
+    launchHint: "Launch game in deep gaming mode",
+    steps: {
+      initiating: "Initiating Lockdown Protocol...",
+      freezing: "Freezing Background Processes...",
+      clearing: "Clearing System Cache...",
+      allocating: "Allocating Maximum Resources...",
+      complete: "Lockdown Complete. Launching...",
+    },
+  },
   junkDeep: {
     radarLabel: "Scanning system",
     selectAll: "Select all",

@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -87,6 +88,7 @@ export default function BoostScreen() {
       return;
     }
     setBoosting(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Sequential fade-out: mark each target as "removing" with a small
     // stagger so the user sees them disappear one after another.
@@ -345,6 +347,9 @@ function AppRow({
         style={styles.rowInner}
         onPress={onToggle}
         disabled={disabled}
+        accessibilityRole="checkbox"
+        accessibilityLabel={`${app.appName}, ${app.ramMb} MB`}
+        accessibilityState={{ checked: selected, disabled }}
       >
         <Checkbox
           state={selected ? "checked" : "unchecked"}
@@ -619,6 +624,9 @@ function BoostButton({
     <Pressable
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled, busy: loading }}
       style={({ pressed }) => [
         styles.boostBtn,
         {

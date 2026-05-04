@@ -1,5 +1,7 @@
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   FlatList,
@@ -29,6 +31,7 @@ import {
 export default function GamingScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [games, setGames] = useState<GameInfo[]>([]);
@@ -39,11 +42,11 @@ export default function GamingScreen() {
   const [selectedGame, setSelectedGame] = useState<GameInfo | null>(null);
 
   const LOCKDOWN_STEPS = [
-    "Initiating Lockdown Protocol...",
-    "Freezing Background Processes...",
-    "Clearing System Cache...",
-    "Allocating Maximum Resources...",
-    "Lockdown Complete. Launching...",
+    t("gaming.steps.initiating"),
+    t("gaming.steps.freezing"),
+    t("gaming.steps.clearing"),
+    t("gaming.steps.allocating"),
+    t("gaming.steps.complete"),
   ];
 
   useEffect(() => {
@@ -60,6 +63,7 @@ export default function GamingScreen() {
     setSelectedGame(game);
     setLockdownActive(true);
     setLockdownStep(0);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     // Sequence animation
     for (let i = 1; i < LOCKDOWN_STEPS.length; i++) {
@@ -100,33 +104,38 @@ export default function GamingScreen() {
           <Animated.View entering={FadeInDown.duration(500)} style={styles.header}>
             <View style={styles.titleRow}>
               <Feather name="crosshair" size={28} color={gamingPrimary} />
-              <Text style={[styles.title, { color: colors.foreground }]}>Deep Gaming Mode</Text>
+              <Text style={[styles.title, { color: colors.foreground }]}>{t("gaming.title")}</Text>
             </View>
             
-            <Card style={styles.statusCard}>
+            <Card style={[styles.statusCard, { backgroundColor: colors.card }]}>
               <View style={styles.statusRow}>
                 <View style={styles.statusInfo}>
-                  <Text style={[styles.statusLabel, { color: colors.mutedForeground }]}>SYSTEM STATUS</Text>
-                  <Text style={[styles.statusValue, { color: gamingPrimary }]}>LOCKDOWN READY</Text>
+                  <Text style={[styles.statusLabel, { color: colors.mutedForeground }]}>{t("gaming.systemStatus")}</Text>
+                  <Text style={[styles.statusValue, { color: gamingPrimary }]}>{t("gaming.lockdownReady")}</Text>
                 </View>
                 <View style={styles.ramBadge}>
-                  <Text style={styles.ramText}>{Math.round(ramUsed * 100)}% RAM Used</Text>
+                  <Text style={styles.ramText}>{t("gaming.ramUsed", { percent: Math.round(ramUsed * 100) })}</Text>
                 </View>
               </View>
               <View style={styles.glowBar} />
             </Card>
 
-            <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>INSTALLED GAMES</Text>
+            <Text style={[styles.sectionTitle, { color: colors.mutedForeground }]}>{t("gaming.installedGames")}</Text>
           </Animated.View>
         )}
         renderItem={({ item, index }) => (
           <Animated.View entering={FadeInDown.delay(100 * index)} layout={Layout.springify()}>
-            <Pressable onPress={() => handleLaunch(item)}>
+            <Pressable
+              onPress={() => handleLaunch(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.label}, ${item.lastPlayed}`}
+              accessibilityHint={t("gaming.launchHint")}
+            >
               {({ pressed }) => (
-                <Card
+                  <Card
                   style={[
                     styles.gameCard,
-                    { borderColor: pressed ? gamingPrimary : colors.border },
+                    { backgroundColor: colors.card, borderColor: pressed ? gamingPrimary : colors.border },
                     pressed && styles.pressedCard,
                   ]}
                 >
@@ -155,9 +164,16 @@ export default function GamingScreen() {
               <Animated.View entering={FadeIn} style={styles.scanLine} />
             </View>
             
-            <Text style={styles.lockdownTitle}>SYSTEM LOCKDOWN</Text>
+            <Text
+              style={styles.lockdownTitle}
+              accessibilityRole="header"
+            >{t("gaming.lockdownTitle")}</Text>
             
-            <View style={styles.stepsContainer}>
+            <View
+              style={styles.stepsContainer}
+              accessibilityLiveRegion="polite"
+              accessibilityLabel={LOCKDOWN_STEPS[lockdownStep]}
+            >
               {LOCKDOWN_STEPS.map((step, i) => (
                 <View key={i} style={styles.stepRow}>
                   <View style={[
@@ -175,8 +191,10 @@ export default function GamingScreen() {
             </View>
 
             {freedRam > 0 && (
-              <Animated.View entering={FadeIn} style={styles.freedBadge}>
-                <Text style={styles.freedText}>+{freedRam}MB RAM FREED</Text>
+              <Animated.View entering={FadeIn} style={styles.freedBadge}
+                accessibilityRole="alert"
+              >
+                <Text style={styles.freedText}>{t("gaming.ramFreed", { mb: freedRam })}</Text>
               </Animated.View>
             )}
 
@@ -211,7 +229,6 @@ const styles = StyleSheet.create({
     fontFamily: "Cairo_700Bold",
   },
   statusCard: {
-    backgroundColor: "#1a1a1a",
     overflow: "hidden",
     padding: 16,
     borderWidth: 1,
@@ -268,7 +285,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 12,
     gap: 16,
-    backgroundColor: "#262626",
   },
   pressedCard: {
     backgroundColor: "#ef444410",

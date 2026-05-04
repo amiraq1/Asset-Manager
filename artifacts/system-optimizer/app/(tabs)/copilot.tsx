@@ -166,6 +166,8 @@ export default function CopilotScreen() {
               <TouchableOpacity
                 key={action}
                 onPress={() => handleSend(action)}
+                accessibilityRole="button"
+                accessibilityLabel={action}
                 style={[styles.chip, { backgroundColor: colors.muted, borderColor: colors.border }]}
               >
                 <Text style={[styles.chipText, { color: colors.foreground }]}>{action}</Text>
@@ -190,10 +192,15 @@ export default function CopilotScreen() {
               style={[styles.input, { color: colors.foreground }]}
               multiline
               maxLength={500}
+              accessibilityLabel="Message input"
+              accessibilityHint="Type your question for Nabd AI"
             />
             <TouchableOpacity
               onPress={() => handleSend(inputText)}
               disabled={!inputText.trim() || isTyping}
+              accessibilityRole="button"
+              accessibilityLabel="Send message"
+              accessibilityState={{ disabled: !inputText.trim() || isTyping }}
               style={[
                 styles.sendButton,
                 { backgroundColor: colors.primary, opacity: !inputText.trim() || isTyping ? 0.5 : 1 },

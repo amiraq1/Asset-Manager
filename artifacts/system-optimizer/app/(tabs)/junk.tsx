@@ -1,4 +1,5 @@
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -174,6 +175,7 @@ export default function JunkScreen() {
       return;
     }
     setCleaning(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       const result = await cleanJunk(selectedItems);
       if (result.deletedBytes > 0 || result.cleaned > 0) {
@@ -290,12 +292,12 @@ export default function JunkScreen() {
             />
           </View>
           <View style={styles.bulkRow}>
-            <Pressable onPress={selectAll}>
+            <Pressable onPress={selectAll} accessibilityRole="button" accessibilityLabel={t("junkDeep.selectAll")}>
               <Text style={[styles.bulkLink, { color: colors.primary }]}>
                 {t("junkDeep.selectAll")}
               </Text>
             </Pressable>
-            <Pressable onPress={deselectAll}>
+            <Pressable onPress={deselectAll} accessibilityRole="button" accessibilityLabel={t("junkDeep.deselectAll")}>
               <Text style={[styles.bulkLink, { color: colors.mutedForeground }]}>
                 {t("junkDeep.deselectAll")}
               </Text>
@@ -325,6 +327,9 @@ export default function JunkScreen() {
                   <Pressable
                     onPress={() => toggleExpanded(cat)}
                     style={styles.catHeaderText}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t(`junkDeep.categories.${cat}`)}, ${formatBytes(summary.bytes, locale)}`}
+                    accessibilityState={{ expanded: isOpen }}
                   >
                     <View
                       style={[

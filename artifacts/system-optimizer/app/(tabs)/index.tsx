@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -29,6 +30,8 @@ import {
 import { useSettingsStore } from "@/store/settingsStore";
 import { formatBytes, formatPercent } from "@/utils/format";
 
+import { useIsFocused } from "@react-navigation/native";
+
 const WEB_TOP_INSET = 67;
 const TAB_BAR_HEIGHT = 84;
 
@@ -39,16 +42,17 @@ export default function DashboardScreen() {
   const { t } = useTranslation();
   const toast = useToast();
   const locale = useSettingsStore((s) => s.locale);
+  const isFocused = useIsFocused();
 
   const ram = useQuery({
     queryKey: ["ramUsage"],
     queryFn: getRamUsage,
-    refetchInterval: 8000,
+    refetchInterval: isFocused ? 8000 : false,
   });
   const storage = useQuery({
     queryKey: ["storageStats"],
     queryFn: getStorageStats,
-    refetchInterval: 30000,
+    refetchInterval: isFocused ? 30000 : false,
   });
   const device = useDeviceInfo();
   const battery = useBatteryInfo();
@@ -64,6 +68,7 @@ export default function DashboardScreen() {
   const handleOptimize = useCallback(async () => {
     if (optimizing) return;
     setOptimizing(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       const result = await runQuickOptimize();
       void ram.refetch();
@@ -144,6 +149,8 @@ export default function DashboardScreen() {
           </View>
           <Pressable
             onPress={() => router.push("/settings")}
+            accessibilityRole="button"
+            accessibilityLabel={t("dashboard.settings", { defaultValue: "Settings" })}
             style={({ pressed }) => [
               styles.headerIconButton,
               { backgroundColor: colors.muted, opacity: pressed ? 0.7 : 1 }
@@ -287,8 +294,13 @@ function MetricRing({
 }) {
   const colors = useColors();
   return (
-    <View style={styles.metricCol}>
-      <View style={styles.metricHeader}>
+    <View
+      style={styles.metricCol}
+      accessible={true}
+      accessibilityRole="summary"
+      accessibilityLabel={`${label} ${centerLabel}, ${footerPrimary}${footerSecondary ? `, ${footerSecondary}` : ""}`}
+    >
+      <View style={styles.metricHeader} importantForAccessibility="no-hide-descendants">
         <Feather name={icon} size={14} color={colors.mutedForeground} />
         <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>
           {label}
@@ -304,6 +316,7 @@ function MetricRing({
       <Text
         style={[styles.metricFooter, { color: colors.foreground }]}
         numberOfLines={1}
+        importantForAccessibility="no"
       >
         {footerPrimary}
       </Text>
@@ -311,6 +324,7 @@ function MetricRing({
         <Text
           style={[styles.metricNote, { color: colors.mutedForeground }]}
           numberOfLines={3}
+          importantForAccessibility="no"
         >
           {footerSecondary}
         </Text>
@@ -332,6 +346,9 @@ function QuickOptimizeButton({
     <Pressable
       onPress={onPress}
       disabled={loading}
+      accessibilityRole="button"
+      accessibilityLabel={loading ? t("optimizer.optimizing") : t("optimizer.quickOptimize")}
+      accessibilityState={{ disabled: loading, busy: loading }}
       style={({ pressed }) => [
         styles.optimizeBtn,
         {
@@ -387,6 +404,8 @@ function QuickAction({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
       style={({ pressed }) => [
         styles.quickAction,
         {
